@@ -40,15 +40,15 @@
   }
 }
 
-/* When switching between items, suppress all animations so the layout
-   is immediately in its final state for scroll pinning.
+/* When switching between items, run animations instantly so layout
+   is in its final state for scroll pinning. Uses duration: 0s rather
+   than animation: none to avoid re-triggering the close animation
+   when data-switching is cleared after paint.
    data-switching is set by useConcertina(), cleared after paint. */
 [data-switching] .concertina-content[data-state="closed"] {
-  animation: none;
-  height: 0;
-  opacity: 0;
+  animation-duration: 0s;
 }
 
 [data-switching] .concertina-content[data-state="open"] {
-  animation: none;
+  animation-duration: 0s;
 }
