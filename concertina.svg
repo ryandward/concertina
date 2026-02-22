@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
+  <!-- Left button panel -->
+  <rect x="6" y="14" width="24" height="52" rx="6" fill="#5b7ee5"/>
+  <circle cx="18" cy="30" r="2.5" fill="#b8ccf8"/>
+  <circle cx="18" cy="40" r="2.5" fill="#b8ccf8"/>
+  <circle cx="18" cy="50" r="2.5" fill="#b8ccf8"/>
+
+  <!-- Bellows folds (alternating depth) -->
+  <polygon points="30,16  50,10  50,70  30,64" fill="#7094f0" opacity="0.18"/>
+  <polygon points="50,10  70,16  70,64  50,70" fill="#7094f0" opacity="0.32"/>
+  <polygon points="70,16  90,10  90,70  70,64" fill="#7094f0" opacity="0.18"/>
+  <polygon points="90,10 110,16 110,64  90,70" fill="#7094f0" opacity="0.32"/>
+  <polygon points="110,16 130,10 130,70 110,64" fill="#7094f0" opacity="0.18"/>
+  <polygon points="130,10 150,16 150,64 130,70" fill="#7094f0" opacity="0.32"/>
+  <polygon points="150,16 170,14 170,66 150,64" fill="#7094f0" opacity="0.18"/>
+
+  <!-- Bellows top edge -->
+  <polyline points="30,16 50,10 70,16 90,10 110,16 130,10 150,16 170,14"
+    stroke="#5b7ee5" stroke-width="2" stroke-linejoin="round" fill="none"/>
+
+  <!-- Bellows bottom edge -->
+  <polyline points="30,64 50,70 70,64 90,70 110,64 130,70 150,64 170,66"
+    stroke="#5b7ee5" stroke-width="2" stroke-linejoin="round" fill="none"/>
+
+  <!-- Fold creases -->
+  <line x1="50"  y1="10" x2="50"  y2="70" stroke="#5b7ee5" stroke-width="1" opacity="0.2"/>
+  <line x1="70"  y1="16" x2="70"  y2="64" stroke="#5b7ee5" stroke-width="1" opacity="0.2"/>
+  <line x1="90"  y1="10" x2="90"  y2="70" stroke="#5b7ee5" stroke-width="1" opacity="0.2"/>
+  <line x1="110" y1="16" x2="110" y2="64" stroke="#5b7ee5" stroke-width="1" opacity="0.2"/>
+  <line x1="130" y1="10" x2="130" y2="70" stroke="#5b7ee5" stroke-width="1" opacity="0.2"/>
+  <line x1="150" y1="16" x2="150" y2="64" stroke="#5b7ee5" stroke-width="1" opacity="0.2"/>
+
+  <!-- Right button panel -->
+  <rect x="170" y="14" width="24" height="52" rx="6" fill="#5b7ee5"/>
+  <circle cx="182" cy="30" r="2.5" fill="#b8ccf8"/>
+  <circle cx="182" cy="40" r="2.5" fill="#b8ccf8"/>
+  <circle cx="182" cy="50" r="2.5" fill="#b8ccf8"/>
+</svg>

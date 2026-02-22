@@ -1,0 +1,54 @@
+/* concertina — Radix Accordion expand/collapse with scroll pinning support
+ *
+ * Add .concertina-content to your Accordion.Content elements.
+ * The [data-switching] rules are managed automatically by useConcertina().
+ */
+
+.concertina-content {
+  --concertina-open-duration: 200ms;
+  --concertina-close-duration: 150ms;
+  overflow: hidden;
+}
+
+.concertina-content[data-state="open"] {
+  animation: concertina-open var(--concertina-open-duration) ease-out;
+}
+
+.concertina-content[data-state="closed"] {
+  animation: concertina-close var(--concertina-close-duration) ease-out forwards;
+}
+
+@keyframes concertina-open {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes concertina-close {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+/* When switching between items, suppress all animations so the layout
+   is immediately in its final state for scroll pinning.
+   data-switching is set by useConcertina(), cleared after paint. */
+[data-switching] .concertina-content[data-state="closed"] {
+  animation: none;
+  height: 0;
+  opacity: 0;
+}
+
+[data-switching] .concertina-content[data-state="open"] {
+  animation: none;
+}
