@@ -3,13 +3,21 @@
  * clearing any sticky headers. Only adjusts one container's
  * scrollTop. Never cascades to the viewport, which matters on
  * mobile where scrollIntoView pulls the whole page.
+ *
+ * Skips elements that have overflow: auto/scroll in CSS but
+ * don't actually scroll (scrollHeight <= clientHeight). Without
+ * this check, a non-scrolling ancestor with overflow-auto traps
+ * the walk and the real scroll container never gets adjusted.
  */
 export function pinToScrollTop(el: HTMLElement | null): void {
   if (!el) return;
   let parent = el.parentElement;
   while (parent) {
     const { overflowY } = getComputedStyle(parent);
-    if (overflowY === "auto" || overflowY === "scroll") {
+    if (
+      (overflowY === "auto" || overflowY === "scroll") &&
+      parent.scrollHeight > parent.clientHeight
+    ) {
       const box = parent.getBoundingClientRect();
       const target = el.getBoundingClientRect();
       // Check children + grandchildren for sticky headers and offset past them.
