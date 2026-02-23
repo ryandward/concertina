@@ -1,7 +1,7 @@
 {
   "name": "concertina",
-  "version": "0.4.1",
-  "description": "Component API + hook for scroll-pinned Radix Accordion panels with per-item memoization.",
+  "version": "0.5.0",
+  "description": "Layout stability primitives + scroll-pinned Radix Accordion panels with per-item memoization.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -52,7 +52,10 @@
     "react",
     "hook",
     "memoization",
-    "useSyncExternalStore"
+    "useSyncExternalStore",
+    "layout-stability",
+    "stable-slot",
+    "resize-observer"
   ],
   "license": "MIT",
   "repository": {

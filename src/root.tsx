@@ -2,7 +2,6 @@ import {
   forwardRef,
   useRef,
   useLayoutEffect,
-  useEffect,
   useSyncExternalStore,
   useCallback,
   type ComponentPropsWithoutRef,
@@ -10,6 +9,7 @@ import {
 import * as Accordion from "@radix-ui/react-accordion";
 import { ConcertinaStore, ConcertinaContext } from "./store";
 import { pinToScrollTop } from "./pin-to-scroll-top";
+import { useTransitionLock } from "./use-transition-lock";
 
 type AccordionSingleProps = ComponentPropsWithoutRef<typeof Accordion.Root> & {
   type?: "single";
@@ -30,15 +30,15 @@ export const Root = forwardRef<HTMLDivElement, Omit<AccordionSingleProps, "type"
       store.getValue
     );
 
-    const switching = useSyncExternalStore(
-      store.subscribe,
-      store.getSwitching,
-      store.getSwitching
-    );
+    const { locked, lock } = useTransitionLock();
 
     const onValueChange = useCallback(
-      (newValue: string) => store.setValue(newValue),
-      [store]
+      (newValue: string) => {
+        const isSwitching = !!store.getValue() && store.getValue() !== newValue && !!newValue;
+        if (isSwitching) lock();
+        store.setValue(newValue);
+      },
+      [store, lock]
     );
 
     // Scroll after React + Radix have committed the DOM
@@ -46,11 +46,6 @@ export const Root = forwardRef<HTMLDivElement, Omit<AccordionSingleProps, "type"
       if (!value) return;
       pinToScrollTop(store.getItemRef(value));
     }, [value, store]);
-
-    // Clear switching flag after paint so future animations work
-    useEffect(() => {
-      if (switching) store.clearSwitching();
-    }, [switching, store]);
 
     return (
       <ConcertinaContext.Provider value={store}>
@@ -60,7 +55,7 @@ export const Root = forwardRef<HTMLDivElement, Omit<AccordionSingleProps, "type"
           collapsible={collapsible}
           value={value}
           onValueChange={onValueChange}
-          data-switching={switching || undefined}
+          data-switching={locked || undefined}
           {...props}
         >
           {children}

@@ -5,11 +5,10 @@ type Listener = () => void;
 /**
  * External store for concertina accordion state.
  * Lives outside React — one instance per Root.
- * Subscribers get notified on value or switching changes.
+ * Holds value + item refs. Switching logic moved to useTransitionLock.
  */
 export class ConcertinaStore {
   private _value = "";
-  private _switching = false;
   private _itemRefs: Record<string, HTMLElement | null> = {};
   private _listeners = new Set<Listener>();
 
@@ -24,18 +23,8 @@ export class ConcertinaStore {
 
   getValue = (): string => this._value;
 
-  getSwitching = (): boolean => this._switching;
-
   setValue(newValue: string) {
-    const wasSwitching = !!this._value && this._value !== newValue && !!newValue;
-    this._switching = wasSwitching;
     this._value = newValue || "";
-    this._notify();
-  }
-
-  clearSwitching() {
-    if (!this._switching) return;
-    this._switching = false;
     this._notify();
   }
 

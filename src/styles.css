@@ -52,3 +52,12 @@
 [data-switching] .concertina-content[data-state="open"] {
   animation-duration: 0s;
 }
+
+/* StableSlot — all children overlap in the same grid cell.
+   Grid auto-sizes to the largest child. */
+.concertina-stable-slot {
+  display: grid;
+}
+.concertina-stable-slot > * {
+  grid-area: 1 / 1;
+}
