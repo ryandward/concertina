@@ -27,6 +27,7 @@
   ],
   "scripts": {
     "build": "tsup && cp src/styles.css dist/styles.css",
+    "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
