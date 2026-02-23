@@ -8,6 +8,22 @@
   React toolkit for layout stability.
 </p>
 
+## Why this exists
+
+Concertina started because accordions in React are broken. You click an item, it expands, and the thing you just clicked scrolls off the screen because the browser dutifully shoved everything down to make room. You're now looking at content you didn't ask for while the thing you wanted is somewhere above you. On mobile it's even worse because `scrollIntoView` grabs the entire viewport and drags it around like a dog with a sock. The internet isn't supposed to work like this but every accordion library ships this exact behavior and nobody seems bothered.
+
+So concertina started as an accordion wrapper with scroll pinning. But the deeper we got, the more we realized accordions are just one instance of a much bigger problem: things change size and the browser moves everything else to compensate. It happens when you swap a button for a stepper. It happens when a spinner gets replaced by a table. It happens when a panel mounts or unmounts. It's all the same disease.
+
+The core idea that makes concertina work is almost embarrassingly simple: don't swap things. Render all the variants at the same time, in the same grid cell, stacked on top of each other. The cell sizes itself to the biggest one. You just toggle which one is visible. The box never changes size because all the variants are always in there. No measurement, no ResizeObserver, no layout effect. The grid cell figured it out on the first frame because that's what CSS grid already does.
+
+That insight fixes the most common source of layout shift. But there are two cases it doesn't cover:
+
+1. Data loads. You had a little spinner, 48 pixels of calm. Then the actual table shows up at 500 pixels and your scroll position is destroyed. You can't enumerate "all variants" upfront because the content is dynamic, so you need a container that remembers its biggest size and refuses to shrink.
+
+2. A conditional panel mounts or unmounts. Everything below it teleports instantly. There's no animation because apparently we just live like this now.
+
+Concertina has a small primitive for each of these, on top of the accordion and stable slot work that started the whole thing.
+
 ## Install
 
 ```bash
@@ -19,13 +35,9 @@ import * as Concertina from "concertina";
 import "concertina/styles.css";
 ```
 
----
+## Variant switching: StableSlot + Slot
 
-## Layer 1: Primitives
-
-### StableSlot + Slot — Zero-shift variant switching
-
-A UI slot toggles between variants of different sizes (Add button ↔ quantity stepper). Surrounding content reflows. The fix: render **all variants simultaneously** in the same CSS grid cell. The cell auto-sizes to the largest child. Only the active variant is visible.
+OK so the reason your layout shifts when you swap components is that the new component is a different size than the old one and the browser is like "well I guess everything moves now." That's insane. The solution is you don't swap them. You render all of them at the same time, in the same grid cell, stacked on top of each other. The cell sizes itself to the biggest one. You just toggle which one is visible. The box never changes size. It can't. All the variants are always in there.
 
 ```tsx
 <Concertina.StableSlot axis="width" className="action-slot">
@@ -38,55 +50,50 @@ A UI slot toggles between variants of different sizes (Add button ↔ quantity s
 </Concertina.StableSlot>
 ```
 
-**How it works:**
-1. `display: grid` on container, `grid-area: 1/1` on all Slots — everything overlaps
-2. `visibility: hidden` on inactive Slots — invisible but still in layout flow
-3. `inert` attribute on inactive Slots — no focus, no clicks, no screen reader
-4. `display: flex; flex-direction: column` on Slots — content stretches to fill the reserved width
-5. Zero JS measurement — pure CSS, works on first frame
+How it works:
 
-**StableSlot props:**
+- `display: grid` on the container, `grid-area: 1/1` on all Slots. Everything overlaps in one cell.
+- Inactive Slots get `visibility: hidden` (invisible, still in layout flow) and `inert` (no focus, no clicks, no screen reader).
+- Each Slot uses `display: flex; flex-direction: column` so content stretches to fill the reserved width.
+- Zero JS measurement. Pure CSS. Works on the first frame. There's nothing to measure because there's nothing to react to. The size just is what it is.
+
+### StableSlot props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `axis` | `"width"` \| `"height"` \| `"both"` | `"both"` | Which axis to stabilize |
-| `as` | `ElementType` | `"div"` | HTML element to render. Use `"span"` inside buttons. |
-| `className` | `string` | — | Passed to wrapper element |
+| `as` | `ElementType` | `"div"` | HTML element to render |
+| `className` | `string` | | Passed to wrapper |
 
-All other HTML attributes are forwarded.
-
-**Slot props:**
+### Slot props
 
 | Prop | Type | Description |
 |------|------|-------------|
 | `active` | `boolean` | Controls visibility |
 | `as` | `ElementType` | HTML element to render. Default `"div"`. |
 
-#### Rules for correct behavior
+All other HTML attributes are forwarded on both components.
 
-**1. Parent containers must allow content-based sizing.**
-A fixed-width parent (e.g., `grid-template-columns: 10rem`) clips the StableSlot and defeats the mechanism. If a grid column contains a StableSlot, use `auto`:
+### Rules for correct behavior
+
+Parent containers must allow content-based sizing. If you put a StableSlot inside a fixed-width grid column like `grid-template-columns: 1fr 10rem`, the column clips it and you've accomplished nothing. Congratulations. Use `auto`:
 
 ```css
-/* Bad — fixed column ignores StableSlot's intrinsic width */
+/* the StableSlot is trapped in here. it can't do its job */
 grid-template-columns: 1fr 10rem;
 
-/* Good — column auto-sizes to the StableSlot's widest child */
+/* now it can size itself. was that so hard */
 grid-template-columns: 1fr auto;
 ```
 
-**2. Every independently appearing element needs its own StableSlot.**
-If an element appears in one state but not another (e.g., an Undo link below a Charge button), it must be in a separate StableSlot — not nested inside one Slot of the main StableSlot. Stack StableSlots vertically:
+Every independently appearing element needs its own StableSlot. If you have an Undo link that only shows up in one state, don't nest it inside a Slot of the main StableSlot. Give it its own. I shouldn't have to explain this but I'm going to because people do it wrong:
 
 ```tsx
 <div className="action-column">
-  {/* Main action — morphs between Deliver/Charge/Retry/paid */}
   <Concertina.StableSlot axis="width">
     <Concertina.Slot active={showDeliver}><Button>Deliver</Button></Concertina.Slot>
     <Concertina.Slot active={showCharge}><Button>Charge</Button></Concertina.Slot>
-    <Concertina.Slot active={showRetry}><Button>Retry</Button></Concertina.Slot>
   </Concertina.StableSlot>
-  {/* Undo — appears only in Charge state, but space is always reserved */}
   <Concertina.StableSlot>
     <Concertina.Slot active={showCharge}>
       <button className="undo-link">Undo</button>
@@ -95,11 +102,112 @@ If an element appears in one state but not another (e.g., an Undo link below a C
 </div>
 ```
 
-A single Slot inside a StableSlot is valid — it simply reserves the element's space, showing or hiding it without layout shift.
+A single Slot inside a StableSlot is valid. It reserves the element's space, showing or hiding it without shift. This is fine. This is good actually.
 
-### useStableSlot — ResizeObserver ratchet for dynamic content
+## Progressive loading: Gigbag + Warmup
 
-For content that changes size unpredictably (prices, names, status messages) where you can't enumerate all variants upfront. Watches the container, tracks the maximum size ever observed, applies min-width/min-height that only ratchets up.
+Every admin page in every app you've ever seen does this:
+
+```jsx
+if (loading) return <Spinner />;      // 48px
+if (empty)   return <EmptyMsg />;     // 64px
+return <BigTable data={data} />;      // 500px+
+```
+
+Do you see the problem? Do you see it? The spinner is 48 pixels. The table is 500. When the data arrives the container goes from 48 to 500 and the scroll region has an episode. Everything the user was looking at gets launched off screen. This is what you're shipping. This is in production right now.
+
+Gigbag is a container that remembers its largest-ever size via ResizeObserver and will not shrink. Will not. You can put a spinner in there, then a table, then a spinner again, and it stays at the table's height the whole time. It's like a guitar case. You don't reshape the case every time you take the guitar out. That would be insane. The case is the size of the guitar. Always. It also uses `contain: layout style` so internal reflows don't bother the ancestors.
+
+Warmup is a CSS-only shimmer grid that goes inside the Gigbag while you're waiting for data. Instead of a little spinner that tells the browser nothing about what's coming, the Warmup actually looks like the table. Rows. Columns. Pulsing. The browser knows how tall the content region is going to be because you told it. With shapes.
+
+```tsx
+<Concertina.Gigbag axis="height">
+  {loading ? (
+    <Concertina.Warmup rows={8} columns={3} />
+  ) : (
+    <DataTable data={data} />
+  )}
+</Concertina.Gigbag>
+```
+
+The Gigbag ratchets to whichever is taller, the Warmup or the real table. On subsequent re-fetches it holds at the table's height instead of collapsing back. The data can come and go. The container does not care.
+
+### Gigbag props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `axis` | `"width"` \| `"height"` \| `"both"` | `"height"` | Which axis to ratchet |
+| `as` | `ElementType` | `"div"` | HTML element to render |
+
+### Warmup props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `rows` | `number` | `3` | Number of placeholder rows |
+| `columns` | `number` | `1` | Columns per row |
+| `as` | `ElementType` | `"div"` | HTML element to render |
+
+### Theming Warmup
+
+All dimensions are CSS custom properties. Override them to match your app:
+
+```css
+.concertina-warmup {
+  --concertina-warmup-gap: 0.5rem;
+  --concertina-warmup-bone-height: 2.5rem;
+  --concertina-warmup-bone-radius: 0.25rem;
+  --concertina-warmup-bone-color: #e5e7eb;
+}
+```
+
+## Conditional content: Glide
+
+`{show && <Panel />}`. You know this pattern. The panel is either in the DOM or it's not. When it enters, everything below it gets shoved down in a single frame. When it leaves, everything snaps back up. There is no transition. There is no grace. It's just on or off like a light switch except the light switch also moves your furniture.
+
+Glide wraps conditional content with enter/exit CSS animations and delays unmount until the exit animation finishes. The panel slides in. The panel slides out. Content around it moves smoothly. This is what should have been happening the whole time.
+
+```tsx
+<Concertina.Glide show={showPanel}>
+  <Panel />
+</Concertina.Glide>
+```
+
+When `show` goes true, children mount with a `concertina-glide-entering` class. When `show` goes false, they get `concertina-glide-exiting` and stay in the DOM until the animation finishes. Then they unmount for real.
+
+### Glide props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `show` | `boolean` | | Whether the content is visible |
+| `as` | `ElementType` | `"div"` | HTML element to render |
+
+### Customizing Glide timing
+
+```css
+.concertina-glide {
+  --concertina-glide-duration: 300ms;
+  --concertina-glide-height: 2000px; /* max-height ceiling for the animation */
+}
+```
+
+The height variable is a ceiling, not an exact value. `max-height` is how you animate height on auto-height elements. `overflow: hidden` clips any overshoot. It's not perfect but CSS doesn't give us anything better and I've made my peace with it.
+
+## Composing them
+
+Gigbag and Glide solve different problems and they compose:
+
+```tsx
+{/* a form that animates in/out and doesn't collapse during re-renders */}
+<Concertina.Glide show={isEditing}>
+  <Concertina.Gigbag axis="height">
+    <EditForm />
+  </Concertina.Gigbag>
+</Concertina.Glide>
+```
+
+## Dynamic text: useStableSlot
+
+For content that changes size unpredictably (prices, names, status messages) where you can't enumerate all variants upfront. This is what Gigbag uses internally. You can use it directly when you want a ref-based API instead of a wrapper component.
 
 ```tsx
 const slot = Concertina.useStableSlot({ axis: "width" });
@@ -113,11 +221,11 @@ const slot = Concertina.useStableSlot({ axis: "width" });
 |--------|------|---------|-------------|
 | `axis` | `"width"` \| `"height"` \| `"both"` | `"both"` | Which axis to ratchet |
 
-Returns `{ ref, style }` — attach both to the container element.
+Returns `{ ref, style }`. Attach both to the container element.
 
-### useTransitionLock — Animation suppression
+## Animation suppression: useTransitionLock
 
-Suppress CSS transitions during batched state changes. Sets a flag synchronously (batched with state updates in React 18), auto-clears after paint.
+Suppresses CSS transitions during batched state changes. Sets a flag synchronously (batched with state updates in React 18), auto-clears after paint.
 
 ```tsx
 const { locked, lock } = Concertina.useTransitionLock();
@@ -132,25 +240,17 @@ const handleChange = (newValue) => {
 </div>
 ```
 
-### pinToScrollTop(el)
+## Scroll pinning: pinToScrollTop
 
-Scrolls `el` to the top of its nearest scrollable ancestor. Adjusts `scrollTop` only — never cascades to the viewport (critical on mobile where `scrollIntoView` yanks the whole page). Accounts for sticky headers automatically.
+Scrolls an element to the top of its nearest scrollable ancestor. Only touches `scrollTop` on that one container. Does not cascade to the viewport. This matters because `scrollIntoView` on mobile will grab the entire page and drag it around like a dog with a sock. Accounts for sticky headers automatically.
 
-### When to use which
+```tsx
+Concertina.pinToScrollTop(element);
+```
 
-| Content type | Tool | Shift behavior |
-|-------------|------|----------------|
-| Discrete variants (button A ↔ button B) | `StableSlot` + `Slot` | Zero — ever |
-| Dynamic text (prices, names, messages) | `useStableSlot` | Once per new max, then stable |
-| Numeric text specifically | CSS `tabular-nums` | Zero (font-level) |
-
----
-
-## Layer 2: Accordion
+## Accordion
 
 Wraps Radix Accordion with scroll pinning, animation suppression during switches, and per-item memoization via `useSyncExternalStore`.
-
-### Component API
 
 ```tsx
 <Concertina.Root className="my-accordion">
@@ -167,7 +267,7 @@ Wraps Radix Accordion with scroll pinning, animation suppression during switches
 
 When you switch between items, the new one pins to the top of the scroll container. Animations are suppressed during the switch and restored after paint.
 
-**`useExpanded(id)`** — per-item expansion hook. Only re-renders when this item's boolean flips:
+`useExpanded(id)` is a per-item expansion hook. Only re-renders when this specific item's boolean flips:
 
 ```tsx
 function MyItem({ item }) {
@@ -176,7 +276,9 @@ function MyItem({ item }) {
 }
 ```
 
-### Hook API (legacy)
+### Legacy hook API
+
+For cases where you need to manage Radix Accordion directly:
 
 ```tsx
 const { rootProps, getItemRef } = Concertina.useConcertina();
@@ -190,12 +292,12 @@ const { rootProps, getItemRef } = Concertina.useConcertina();
 
 | Property | Type | Description |
 |---|---|---|
-| `rootProps` | `object` | Spread onto `Accordion.Root` — contains `value`, `onValueChange`, `data-switching` |
+| `rootProps` | `object` | Spread onto `Accordion.Root`. Contains `value`, `onValueChange`, `data-switching`. |
 | `getItemRef` | `(id: string) => RefCallback` | Attach to each `Accordion.Item` |
 | `value` | `string` | Currently expanded item (empty string when collapsed) |
 | `switching` | `boolean` | True during a switch between items |
 
-## Customize animation timing
+### Customizing accordion animation
 
 ```css
 .concertina-content {
@@ -205,6 +307,16 @@ const { rootProps, getItemRef } = Concertina.useConcertina();
 ```
 
 If items near the bottom can't scroll to the top, add `padding-bottom: 50vh` to the scroll container.
+
+## Picking the right tool
+
+| Problem | Tool |
+|---------|------|
+| Two variants swap in one slot | StableSlot + Slot |
+| Text changes width unpredictably | useStableSlot (or CSS `tabular-nums` for numbers) |
+| Spinner replaced by loaded content | Gigbag + Warmup |
+| Panel mounts/unmounts conditionally | Glide |
+| Accordion with scroll pinning | Root + Item + Content |
 
 ## License
 

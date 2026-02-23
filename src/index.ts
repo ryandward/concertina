@@ -16,6 +16,14 @@ export type { SlotProps } from "./slot";
 export { useStableSlot } from "./use-stable-slot";
 export { useTransitionLock } from "./use-transition-lock";
 
+// Progressive loading (v0.7.0+)
+export { Gigbag } from "./gigbag";
+export type { GigbagProps } from "./gigbag";
+export { Warmup } from "./warmup";
+export type { WarmupProps } from "./warmup";
+export { Glide } from "./glide";
+export type { GlideProps } from "./glide";
+
 // Utilities
 export { pinToScrollTop } from "./pin-to-scroll-top";
 

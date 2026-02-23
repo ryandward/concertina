@@ -65,3 +65,51 @@
   display: flex;
   flex-direction: column;
 }
+
+/* Gigbag — size-reserving container.
+   contain isolates internal reflow from ancestors. */
+.concertina-gigbag {
+  contain: layout style;
+}
+
+/* Warmup — structural placeholder shimmer grid. */
+.concertina-warmup {
+  display: grid;
+  gap: var(--concertina-warmup-gap, 0.75rem);
+  contain: layout style;
+}
+
+.concertina-warmup-bone {
+  height: var(--concertina-warmup-bone-height, 1rem);
+  border-radius: var(--concertina-warmup-bone-radius, 0.25rem);
+  background: var(--concertina-warmup-bone-color, #e5e7eb);
+  animation: concertina-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes concertina-shimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Glide — enter/exit animation wrapper. */
+.concertina-glide {
+  --concertina-glide-duration: 200ms;
+}
+
+.concertina-glide-entering {
+  animation: concertina-glide-in var(--concertina-glide-duration) ease-out;
+}
+
+.concertina-glide-exiting {
+  animation: concertina-glide-out var(--concertina-glide-duration) ease-out forwards;
+}
+
+@keyframes concertina-glide-in {
+  from { opacity: 0; max-height: 0; overflow: hidden; }
+  to   { opacity: 1; max-height: var(--concertina-glide-height, 1000px); overflow: hidden; }
+}
+
+@keyframes concertina-glide-out {
+  from { opacity: 1; max-height: var(--concertina-glide-height, 1000px); overflow: hidden; }
+  to   { opacity: 0; max-height: 0; overflow: hidden; }
+}
