@@ -1,7 +1,7 @@
 {
   "name": "concertina",
-  "version": "0.5.1",
-  "description": "Layout stability primitives + scroll-pinned Radix Accordion panels with per-item memoization.",
+  "version": "0.5.2",
+  "description": "React toolkit for layout stability.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

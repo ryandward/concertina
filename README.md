@@ -5,7 +5,7 @@
 <h1 align="center">concertina</h1>
 
 <p align="center">
-  Layout stability primitives + scroll-pinned <a href="https://www.radix-ui.com/primitives/docs/components/accordion">Radix Accordion</a> panels.
+  React toolkit for layout stability.
 </p>
 
 ## Install
