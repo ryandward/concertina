@@ -80,15 +80,37 @@
 }
 
 .concertina-warmup-bone {
-  height: var(--concertina-warmup-bone-height, 1rem);
-  border-radius: var(--concertina-warmup-bone-radius, 0.25rem);
-  background: var(--concertina-warmup-bone-color, #e5e7eb);
+  display: flex;
+  flex-direction: column;
+  gap: var(--concertina-warmup-bone-gap, 0.125rem);
+  padding: var(--concertina-warmup-bone-padding, 0.375rem 0.5rem);
+}
+
+.concertina-warmup-line {
+  border-radius: var(--concertina-warmup-line-radius, 0.125rem);
+  background: linear-gradient(
+    90deg,
+    var(--concertina-warmup-line-color, #e5e7eb) 25%,
+    var(--concertina-warmup-line-highlight, #f3f4f6) 50%,
+    var(--concertina-warmup-line-color, #e5e7eb) 75%
+  );
+  background-size: 200% 100%;
   animation: concertina-shimmer 1.5s ease-in-out infinite;
 }
 
+.concertina-warmup-line-short {
+  height: var(--concertina-warmup-line-short, 0.5rem);
+  width: 40%;
+}
+
+.concertina-warmup-line-long {
+  height: var(--concertina-warmup-line-long, 0.75rem);
+  width: 75%;
+}
+
 @keyframes concertina-shimmer {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* Glide — enter/exit animation wrapper. */
@@ -112,4 +134,17 @@
 @keyframes concertina-glide-out {
   from { opacity: 1; max-height: var(--concertina-glide-height, 1000px); overflow: hidden; }
   to   { opacity: 0; max-height: 0; overflow: hidden; }
+}
+
+/* Respect reduced-motion preferences.
+   Disables all animations — accordion open/close, shimmer, and glide enter/exit.
+   Layout changes still happen instantly so functionality is preserved. */
+@media (prefers-reduced-motion: reduce) {
+  .concertina-content[data-state="open"],
+  .concertina-content[data-state="closed"],
+  .concertina-glide-entering,
+  .concertina-glide-exiting,
+  .concertina-warmup-line {
+    animation-duration: 0s !important;
+  }
 }

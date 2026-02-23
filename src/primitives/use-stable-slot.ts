@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, type CSSProperties } from "react";
-import type { Axis } from "./stable-slot";
+import type { Axis } from "../components/stable-slot";
 
 interface UseStableSlotOptions {
   /** Which axis to ratchet. Default: "both". */

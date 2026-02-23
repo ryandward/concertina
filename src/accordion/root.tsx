@@ -1,15 +1,14 @@
 import {
   forwardRef,
   useRef,
-  useLayoutEffect,
   useSyncExternalStore,
   useCallback,
   type ComponentPropsWithoutRef,
 } from "react";
 import * as Accordion from "@radix-ui/react-accordion";
 import { ConcertinaStore, ConcertinaContext } from "./store";
-import { pinToScrollTop } from "./pin-to-scroll-top";
-import { useTransitionLock } from "./use-transition-lock";
+import { useScrollPin } from "../primitives/use-scroll-pin";
+import { useTransitionLock } from "../primitives/use-transition-lock";
 
 type AccordionSingleProps = ComponentPropsWithoutRef<typeof Accordion.Root> & {
   type?: "single";
@@ -42,10 +41,10 @@ export const Root = forwardRef<HTMLDivElement, Omit<AccordionSingleProps, "type"
     );
 
     // Scroll after React + Radix have committed the DOM
-    useLayoutEffect(() => {
-      if (!value) return;
-      pinToScrollTop(store.getItemRef(value));
-    }, [value, store]);
+    useScrollPin(
+      () => (value ? store.getItemRef(value) : null),
+      [value, store]
+    );
 
     return (
       <ConcertinaContext.Provider value={store}>

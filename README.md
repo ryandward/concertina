@@ -8,21 +8,27 @@
   React toolkit for layout stability.
 </p>
 
+<p align="center">
+  <a href="https://github.com/ryandward/concertina/actions/workflows/ci.yml"><img src="https://github.com/ryandward/concertina/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+</p>
+
+<p align="center"><b>47 tests</b> &middot; 716 lines of source &middot; 1 dependency</p>
+
 ## Why this exists
 
-Concertina started because accordions in React are broken. You click an item, it expands, and the thing you just clicked scrolls off the screen because the browser dutifully shoved everything down to make room. You're now looking at content you didn't ask for while the thing you wanted is somewhere above you. On mobile it's even worse because `scrollIntoView` grabs the entire viewport and drags it around like a dog with a sock. The internet isn't supposed to work like this but every accordion library ships this exact behavior and nobody seems bothered.
+Concertina started because accordions in React are broken. You click an item, it expands, and the thing you just clicked scrolls off the screen. The browser shoved everything down to make room and now you're staring at content you didn't ask for while the thing you wanted is somewhere above you. On mobile it's worse — `scrollIntoView` grabs the entire viewport and drags it around like a dog with a sock.
 
-So concertina started as an accordion wrapper with scroll pinning. But the deeper we got, the more we realized accordions are just one instance of a much bigger problem: things change size and the browser moves everything else to compensate. It happens when you swap a button for a stepper. It happens when a spinner gets replaced by a table. It happens when a panel mounts or unmounts. It's all the same disease.
+So concertina started as an accordion wrapper with scroll pinning. But the deeper we got, the more we realized accordions are just one instance of a bigger problem: things change size and the browser moves everything else to compensate. Swap a button for a stepper. Replace a spinner with a table. Mount a panel. Unmount it. Same disease, every time.
 
-The core idea that makes concertina work is almost embarrassingly simple: don't swap things. Render all the variants at the same time, in the same grid cell, stacked on top of each other. The cell sizes itself to the biggest one. You just toggle which one is visible. The box never changes size because all the variants are always in there. No measurement, no ResizeObserver, no layout effect. The grid cell figured it out on the first frame because that's what CSS grid already does.
+The core idea is almost embarrassingly simple: don't swap things. Render all the variants at the same time, in the same grid cell, stacked on top of each other. The cell sizes itself to the biggest one. You toggle which one is visible. The box never changes size because all the variants are always in there. No measurement, no ResizeObserver, no layout effect. CSS grid figured it out on the first frame because that's what it already does.
 
-That insight fixes the most common source of layout shift. But there are two cases it doesn't cover:
+That covers the most common source of layout shift. Two cases it doesn't cover:
 
-1. Data loads. You had a little spinner, 48 pixels of calm. Then the actual table shows up at 500 pixels and your scroll position is destroyed. You can't enumerate "all variants" upfront because the content is dynamic, so you need a container that remembers its biggest size and refuses to shrink.
+1. **Data loads.** A spinner sits at 48 pixels. The real table shows up at 500. The scroll region has an episode. You can't enumerate all variants upfront because the content is dynamic, so you need a container that remembers its biggest size and refuses to shrink.
 
-2. A conditional panel mounts or unmounts. Everything below it teleports instantly. There's no animation because apparently we just live like this now.
+2. **Conditional content.** A panel mounts or unmounts. Everything below it teleports in a single frame. No transition. No grace. On, off, furniture moved.
 
-Concertina has a small primitive for each of these, on top of the accordion and stable slot work that started the whole thing.
+Concertina has a small primitive for each.
 
 ## Install
 
@@ -37,7 +43,7 @@ import "concertina/styles.css";
 
 ## Variant switching: StableSlot + Slot
 
-OK so the reason your layout shifts when you swap components is that the new component is a different size than the old one and the browser is like "well I guess everything moves now." That's insane. The solution is you don't swap them. You render all of them at the same time, in the same grid cell, stacked on top of each other. The cell sizes itself to the biggest one. You just toggle which one is visible. The box never changes size. It can't. All the variants are always in there.
+Your layout shifts when you swap components because the new one is a different size and the browser just rolls with it. The fix: don't swap them. Render all of them at the same time, same grid cell, stacked. The cell sizes to the biggest one. Toggle visibility. The box can't change size. All the variants are always in there.
 
 ```tsx
 <Concertina.StableSlot axis="width" className="action-slot">
@@ -55,7 +61,7 @@ How it works:
 - `display: grid` on the container, `grid-area: 1/1` on all Slots. Everything overlaps in one cell.
 - Inactive Slots get `visibility: hidden` (invisible, still in layout flow) and `inert` (no focus, no clicks, no screen reader).
 - Each Slot uses `display: flex; flex-direction: column` so content stretches to fill the reserved width.
-- Zero JS measurement. Pure CSS. Works on the first frame. There's nothing to measure because there's nothing to react to. The size just is what it is.
+- Zero JS measurement. Pure CSS. Works on the first frame.
 
 ### StableSlot props
 
@@ -76,17 +82,17 @@ All other HTML attributes are forwarded on both components.
 
 ### Rules for correct behavior
 
-Parent containers must allow content-based sizing. If you put a StableSlot inside a fixed-width grid column like `grid-template-columns: 1fr 10rem`, the column clips it and you've accomplished nothing. Congratulations. Use `auto`:
+Parent containers must allow content-based sizing. A StableSlot inside `grid-template-columns: 1fr 10rem` is trapped — the fixed column clips it and the whole thing is pointless. Use `auto`:
 
 ```css
-/* the StableSlot is trapped in here. it can't do its job */
+/* StableSlot can't do its job in here */
 grid-template-columns: 1fr 10rem;
 
-/* now it can size itself. was that so hard */
+/* now it can size itself */
 grid-template-columns: 1fr auto;
 ```
 
-Every independently appearing element needs its own StableSlot. If you have an Undo link that only shows up in one state, don't nest it inside a Slot of the main StableSlot. Give it its own. I shouldn't have to explain this but I'm going to because people do it wrong:
+Every independently appearing element needs its own StableSlot. An Undo link that only shows up in one state gets its own wrapper — don't nest it inside a Slot of the main StableSlot:
 
 ```tsx
 <div className="action-column">
@@ -106,7 +112,7 @@ A single Slot inside a StableSlot is valid. It reserves the element's space, sho
 
 ## Progressive loading: Gigbag + Warmup
 
-Every admin page in every app you've ever seen does this:
+You've seen this a thousand times:
 
 ```jsx
 if (loading) return <Spinner />;      // 48px
@@ -114,11 +120,11 @@ if (empty)   return <EmptyMsg />;     // 64px
 return <BigTable data={data} />;      // 500px+
 ```
 
-Do you see the problem? Do you see it? The spinner is 48 pixels. The table is 500. When the data arrives the container goes from 48 to 500 and the scroll region has an episode. Everything the user was looking at gets launched off screen. This is what you're shipping. This is in production right now.
+The spinner is 48 pixels. The table is 500. When the data arrives, the container quintuples in height and everything the user was looking at gets launched off screen.
 
-Gigbag is a container that remembers its largest-ever size via ResizeObserver and will not shrink. Will not. You can put a spinner in there, then a table, then a spinner again, and it stays at the table's height the whole time. It's like a guitar case. You don't reshape the case every time you take the guitar out. That would be insane. The case is the size of the guitar. Always. It also uses `contain: layout style` so internal reflows don't bother the ancestors.
+Gigbag is a container that remembers its largest-ever size via ResizeObserver and will not shrink. Will not. Put a spinner in there, then a table, then a spinner again — it stays at the table's height the whole time. Like a guitar case. You don't reshape the case every time you take the guitar out. The case is the size of the guitar. Always. It also uses `contain: layout style` so internal reflows don't bother the ancestors.
 
-Warmup is a CSS-only shimmer grid that goes inside the Gigbag while you're waiting for data. Instead of a little spinner that tells the browser nothing about what's coming, the Warmup actually looks like the table. Rows. Columns. Pulsing. The browser knows how tall the content region is going to be because you told it. With shapes.
+Warmup is a CSS-only shimmer grid that goes inside the Gigbag while you're loading. Instead of a spinner that tells the browser nothing about what's coming, the Warmup looks like the content. Rows. Columns. Pulsing. The browser knows how tall things will be because you told it. With shapes.
 
 ```tsx
 <Concertina.Gigbag axis="height">
@@ -130,7 +136,7 @@ Warmup is a CSS-only shimmer grid that goes inside the Gigbag while you're waiti
 </Concertina.Gigbag>
 ```
 
-The Gigbag ratchets to whichever is taller, the Warmup or the real table. On subsequent re-fetches it holds at the table's height instead of collapsing back. The data can come and go. The container does not care.
+The Gigbag ratchets to whichever is taller. On subsequent re-fetches it holds at the table's height instead of collapsing back. The data can come and go. The container does not care.
 
 ### Gigbag props
 
@@ -162,9 +168,9 @@ All dimensions are CSS custom properties. Override them to match your app:
 
 ## Conditional content: Glide
 
-`{show && <Panel />}`. You know this pattern. The panel is either in the DOM or it's not. When it enters, everything below it gets shoved down in a single frame. When it leaves, everything snaps back up. There is no transition. There is no grace. It's just on or off like a light switch except the light switch also moves your furniture.
+`{show && <Panel />}`. The panel is either in the DOM or it's not. When it enters, everything below it gets shoved down in a single frame. When it leaves, everything snaps back up. It's a light switch that also moves your furniture.
 
-Glide wraps conditional content with enter/exit CSS animations and delays unmount until the exit animation finishes. The panel slides in. The panel slides out. Content around it moves smoothly. This is what should have been happening the whole time.
+Glide wraps conditional content with enter/exit CSS animations and delays unmount until the exit animation finishes. The panel slides in, the panel slides out, content around it moves smoothly.
 
 ```tsx
 <Concertina.Glide show={showPanel}>
@@ -190,7 +196,7 @@ When `show` goes true, children mount with a `concertina-glide-entering` class. 
 }
 ```
 
-The height variable is a ceiling, not an exact value. `max-height` is how you animate height on auto-height elements. `overflow: hidden` clips any overshoot. It's not perfect but CSS doesn't give us anything better and I've made my peace with it.
+The height variable is a ceiling, not an exact value. `max-height` is how you animate height on auto-height elements. `overflow: hidden` clips any overshoot. CSS doesn't give us anything better.
 
 ## Composing them
 
@@ -207,7 +213,7 @@ Gigbag and Glide solve different problems and they compose:
 
 ## Dynamic text: useStableSlot
 
-For content that changes size unpredictably (prices, names, status messages) where you can't enumerate all variants upfront. This is what Gigbag uses internally. You can use it directly when you want a ref-based API instead of a wrapper component.
+For content that changes size unpredictably (prices, names, status messages) where you can't enumerate all variants upfront. This is what Gigbag uses internally. Use it directly when you want a ref-based API instead of a wrapper component.
 
 ```tsx
 const slot = Concertina.useStableSlot({ axis: "width" });
@@ -242,7 +248,7 @@ const handleChange = (newValue) => {
 
 ## Scroll pinning: pinToScrollTop
 
-Scrolls an element to the top of its nearest scrollable ancestor. Only touches `scrollTop` on that one container. Does not cascade to the viewport. This matters because `scrollIntoView` on mobile will grab the entire page and drag it around like a dog with a sock. Accounts for sticky headers automatically.
+Scrolls an element to the top of its nearest scrollable ancestor. Only touches `scrollTop` on that one container. Never cascades to the viewport — no full-page drag on mobile. Accounts for sticky headers automatically.
 
 ```tsx
 Concertina.pinToScrollTop(element);

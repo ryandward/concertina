@@ -1,5 +1,5 @@
 import { forwardRef, type HTMLAttributes, type ElementType } from "react";
-import { useStableSlot } from "./use-stable-slot";
+import { useStableSlot } from "../primitives/use-stable-slot";
 import type { Axis } from "./stable-slot";
 
 export interface GigbagProps extends HTMLAttributes<HTMLElement> {

@@ -26,7 +26,10 @@ export const Warmup = forwardRef<HTMLElement, WarmupProps>(
       : "concertina-warmup";
 
     const cells = Array.from({ length: rows * columns }, (_, i) => (
-      <div key={i} className="concertina-warmup-bone" />
+      <div key={i} className="concertina-warmup-bone">
+        <div className="concertina-warmup-line concertina-warmup-line-short" />
+        <div className="concertina-warmup-line concertina-warmup-line-long" />
+      </div>
     ));
 
     return (

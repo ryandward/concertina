@@ -1,32 +1,37 @@
-// Component API (v0.4.0+)
-export { Root } from "./root";
-export { Item } from "./item";
-export { Content } from "./content";
-export { useExpanded } from "./use-expanded";
-export { ConcertinaStore, ConcertinaContext } from "./store";
+// Accordion — Radix integration (v0.4.0+)
+export { Root } from "./accordion/root";
+export { Item } from "./accordion/item";
+export { Content } from "./accordion/content";
+export { useExpanded } from "./accordion/use-expanded";
+export { ConcertinaStore, ConcertinaContext } from "./accordion/store";
 
 // Re-export Radix primitives that need no wrapping
 export { Trigger, Header } from "@radix-ui/react-accordion";
 
-// Layout stability (v0.5.0+)
-export { StableSlot } from "./stable-slot";
-export type { StableSlotProps, Axis } from "./stable-slot";
-export { Slot } from "./slot";
-export type { SlotProps } from "./slot";
-export { useStableSlot } from "./use-stable-slot";
-export { useTransitionLock } from "./use-transition-lock";
+// Components — thin compositions (v0.5.0+)
+export { StableSlot } from "./components/stable-slot";
+export type { StableSlotProps, Axis } from "./components/stable-slot";
+export { Slot } from "./components/slot";
+export type { SlotProps } from "./components/slot";
 
 // Progressive loading (v0.7.0+)
-export { Gigbag } from "./gigbag";
-export type { GigbagProps } from "./gigbag";
-export { Warmup } from "./warmup";
-export type { WarmupProps } from "./warmup";
-export { Glide } from "./glide";
-export type { GlideProps } from "./glide";
+export { Gigbag } from "./components/gigbag";
+export type { GigbagProps } from "./components/gigbag";
+export { Warmup } from "./components/warmup";
+export type { WarmupProps } from "./components/warmup";
+export { Glide } from "./components/glide";
+export type { GlideProps } from "./components/glide";
 
-// Utilities
-export { pinToScrollTop } from "./pin-to-scroll-top";
+// Primitives — composable building blocks (v0.8.0+)
+export { useSize } from "./primitives/use-size";
+export type { Size } from "./primitives/use-size";
+export { usePresence } from "./primitives/use-presence";
+export type { Phase, UsePresenceReturn } from "./primitives/use-presence";
+export { useScrollPin } from "./primitives/use-scroll-pin";
+export { useStableSlot } from "./primitives/use-stable-slot";
+export { useTransitionLock } from "./primitives/use-transition-lock";
+export { pinToScrollTop } from "./primitives/pin-to-scroll-top";
 
 // Legacy hook API (backward compat)
-export { useConcertina } from "./use-concertina";
-export type { UseConcertinaReturn, ConcertinaRootProps } from "./use-concertina";
+export { useConcertina } from "./accordion/use-concertina";
+export type { UseConcertinaReturn, ConcertinaRootProps } from "./accordion/use-concertina";

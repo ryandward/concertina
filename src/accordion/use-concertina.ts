@@ -5,7 +5,7 @@ import {
   useLayoutEffect,
   useEffect,
 } from "react";
-import { pinToScrollTop } from "./pin-to-scroll-top";
+import { pinToScrollTop } from "../primitives/pin-to-scroll-top";
 
 export interface ConcertinaRootProps {
   value: string;
