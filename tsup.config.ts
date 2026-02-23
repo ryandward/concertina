@@ -6,5 +6,6 @@ export default defineConfig({
   dts: true,
   clean: true,
   jsx: "automatic",
-  external: ["react", "@radix-ui/react-accordion"],
+  external: ["react", "react-dom"],
+  noExternal: [/^@radix-ui/],
 });
