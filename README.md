@@ -39,10 +39,10 @@ A UI slot toggles between variants of different sizes (Add button ↔ quantity s
 ```
 
 **How it works:**
-1. `display: grid` on container, `grid-area: 1/1` on all slots — everything overlaps
-2. `visibility: hidden` on inactive slots — invisible but still in layout flow
-3. `inert` attribute on inactive slots — no focus, no clicks, no screen reader
-4. Axis-aware collapse (`max-height: 0` or `max-width: 0`) so only the relevant axis contributes to sizing
+1. `display: grid` on container, `grid-area: 1/1` on all Slots — everything overlaps
+2. `visibility: hidden` on inactive Slots — invisible but still in layout flow
+3. `inert` attribute on inactive Slots — no focus, no clicks, no screen reader
+4. `display: flex; flex-direction: column` on Slots — content stretches to fill the reserved width
 5. Zero JS measurement — pure CSS, works on first frame
 
 **StableSlot props:**
@@ -50,15 +50,52 @@ A UI slot toggles between variants of different sizes (Add button ↔ quantity s
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `axis` | `"width"` \| `"height"` \| `"both"` | `"both"` | Which axis to stabilize |
-| `className` | `string` | — | Passed to wrapper div |
+| `as` | `ElementType` | `"div"` | HTML element to render. Use `"span"` inside buttons. |
+| `className` | `string` | — | Passed to wrapper element |
 
-All other div attributes are forwarded.
+All other HTML attributes are forwarded.
 
 **Slot props:**
 
 | Prop | Type | Description |
 |------|------|-------------|
 | `active` | `boolean` | Controls visibility |
+| `as` | `ElementType` | HTML element to render. Default `"div"`. |
+
+#### Rules for correct behavior
+
+**1. Parent containers must allow content-based sizing.**
+A fixed-width parent (e.g., `grid-template-columns: 10rem`) clips the StableSlot and defeats the mechanism. If a grid column contains a StableSlot, use `auto`:
+
+```css
+/* Bad — fixed column ignores StableSlot's intrinsic width */
+grid-template-columns: 1fr 10rem;
+
+/* Good — column auto-sizes to the StableSlot's widest child */
+grid-template-columns: 1fr auto;
+```
+
+**2. Every independently appearing element needs its own StableSlot.**
+If an element appears in one state but not another (e.g., an Undo link below a Charge button), it must be in a separate StableSlot — not nested inside one Slot of the main StableSlot. Stack StableSlots vertically:
+
+```tsx
+<div className="action-column">
+  {/* Main action — morphs between Deliver/Charge/Retry/paid */}
+  <Concertina.StableSlot axis="width">
+    <Concertina.Slot active={showDeliver}><Button>Deliver</Button></Concertina.Slot>
+    <Concertina.Slot active={showCharge}><Button>Charge</Button></Concertina.Slot>
+    <Concertina.Slot active={showRetry}><Button>Retry</Button></Concertina.Slot>
+  </Concertina.StableSlot>
+  {/* Undo — appears only in Charge state, but space is always reserved */}
+  <Concertina.StableSlot>
+    <Concertina.Slot active={showCharge}>
+      <button className="undo-link">Undo</button>
+    </Concertina.Slot>
+  </Concertina.StableSlot>
+</div>
+```
+
+A single Slot inside a StableSlot is valid — it simply reserves the element's space, showing or hiding it without layout shift.
 
 ### useStableSlot — ResizeObserver ratchet for dynamic content
 

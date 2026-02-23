@@ -3,27 +3,27 @@ import {
   useContext,
   type HTMLAttributes,
   type CSSProperties,
+  type ElementType,
 } from "react";
 import { AxisContext, type Axis } from "./stable-slot";
 
-export interface SlotProps extends HTMLAttributes<HTMLDivElement> {
+export interface SlotProps extends HTMLAttributes<HTMLElement> {
   /** Whether this slot is the active (visible) variant. */
   active: boolean;
+  /** HTML element to render. Use "span" inside buttons. Default: "div". */
+  as?: ElementType;
 }
 
-function inactiveStyle(axis: Axis): CSSProperties {
-  const base: CSSProperties = { visibility: "hidden", overflow: "hidden" };
-
-  if (axis === "width") {
-    // Contribute width, collapse height — row height follows active child only
-    base.maxHeight = 0;
-  } else if (axis === "height") {
-    // Contribute height, collapse width
-    base.maxWidth = 0;
-  }
-  // axis === "both" — contribute both dimensions, just invisible
-
-  return base;
+function inactiveStyle(_axis: Axis): CSSProperties {
+  // Inactive slots are invisible and non-interactive (inert attribute).
+  // They remain full-size so they contribute their intrinsic dimensions
+  // to the CSS grid track sizing.  The grid cell sizes to the largest
+  // child, giving the StableSlot a fixed bounding box.
+  //
+  // No overflow: hidden — causes grid to clamp auto minimum to 0.
+  // No maxHeight/maxWidth: 0 — causes browsers to skip the element's
+  // cross-axis contribution to grid track sizing.
+  return { visibility: "hidden" };
 }
 
 /**
@@ -31,15 +31,13 @@ function inactiveStyle(axis: Axis): CSSProperties {
  * All slots overlap via CSS grid. Inactive slots are hidden
  * but still contribute to grid cell sizing.
  *
- * Five things work together:
+ * Three things work together:
  * 1. grid-area: 1/1 — all slots overlap in the same cell
  * 2. visibility: hidden — invisible but in layout flow
  * 3. inert — no focus, no clicks, no screen reader
- * 4. max-height/max-width: 0 — axis-aware collapse
- * 5. overflow: hidden — prevents content bleed from collapsed axis
  */
-export const Slot = forwardRef<HTMLDivElement, SlotProps>(
-  function Slot({ active, style, children, ...props }, ref) {
+export const Slot = forwardRef<HTMLElement, SlotProps>(
+  function Slot({ active, as: Tag = "div", style, children, ...props }, ref) {
     const axis = useContext(AxisContext);
 
     const merged: CSSProperties = active
@@ -47,14 +45,14 @@ export const Slot = forwardRef<HTMLDivElement, SlotProps>(
       : { ...inactiveStyle(axis), ...style };
 
     return (
-      <div
+      <Tag
         ref={ref}
         inert={!active || undefined}
         style={merged}
         {...props}
       >
         {children}
-      </div>
+      </Tag>
     );
   }
 );

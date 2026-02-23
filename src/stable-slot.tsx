@@ -2,15 +2,18 @@ import {
   forwardRef,
   createContext,
   type HTMLAttributes,
+  type ElementType,
 } from "react";
 
 export type Axis = "width" | "height" | "both";
 
 export const AxisContext = createContext<Axis>("both");
 
-export interface StableSlotProps extends HTMLAttributes<HTMLDivElement> {
+export interface StableSlotProps extends HTMLAttributes<HTMLElement> {
   /** Which axis to stabilize. Default: "both". */
   axis?: Axis;
+  /** HTML element to render. Use "span" inside buttons. Default: "div". */
+  as?: ElementType;
 }
 
 /**
@@ -20,17 +23,17 @@ export interface StableSlotProps extends HTMLAttributes<HTMLDivElement> {
  *
  * Zero JS measurement — pure CSS grid sizing.
  */
-export const StableSlot = forwardRef<HTMLDivElement, StableSlotProps>(
-  function StableSlot({ axis = "both", className, children, ...props }, ref) {
+export const StableSlot = forwardRef<HTMLElement, StableSlotProps>(
+  function StableSlot({ axis = "both", as: Tag = "div", className, style, children, ...props }, ref) {
     const merged = className
       ? `concertina-stable-slot ${className}`
       : "concertina-stable-slot";
 
     return (
       <AxisContext.Provider value={axis}>
-        <div ref={ref} className={merged} {...props}>
+        <Tag ref={ref} className={merged} style={style} {...props}>
           {children}
-        </div>
+        </Tag>
       </AxisContext.Provider>
     );
   }

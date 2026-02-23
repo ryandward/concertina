@@ -54,10 +54,14 @@
 }
 
 /* StableSlot — all children overlap in the same grid cell.
-   Grid auto-sizes to the largest child. */
+   Grid auto-sizes to the largest child.
+   Slots use flex-column so their content stretches to fill
+   the reserved width — the visual footprint is constant. */
 .concertina-stable-slot {
   display: grid;
 }
 .concertina-stable-slot > * {
   grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
 }
