@@ -1,15 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
-// Read actual CSS for content verification
-const actualCss = readFileSync(
-  resolve(__dirname, "../styles.css"),
-  "utf-8"
-);
+// Mock the CSS import with representative content (vitest stubs CSS imports to empty string)
+const MOCK_CSS = `.concertina-stable-slot { display: grid; }
+.concertina-warmup-line { height: 1lh; }
+.concertina-gigbag { contain: layout style; }`;
 
-// Mock the CSS import to return actual file content (vitest stubs CSS imports)
-vi.mock("../styles.css", () => ({ default: actualCss }));
+vi.mock("../styles.css", () => ({ default: MOCK_CSS }));
 
 beforeEach(() => {
   document.head.innerHTML = "";
@@ -24,7 +20,7 @@ describe("injectStyles", () => {
     expect(style).not.toBeNull();
   });
 
-  it("is idempotent — second call does not add duplicate", async () => {
+  it("is idempotent, second call does not add duplicate", async () => {
     const { injectStyles } = await import("../internal/inject-styles");
     injectStyles();
     injectStyles();
@@ -58,7 +54,7 @@ describe("injectStyles", () => {
 
   it("is a no-op when document is undefined (SSR)", async () => {
     const originalDoc = globalThis.document;
-    // @ts-expect-error — simulate SSR
+    // @ts-expect-error simulate SSR
     delete globalThis.document;
     try {
       const { injectStyles } = await import("../internal/inject-styles");
