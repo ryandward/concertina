@@ -67,12 +67,13 @@
 }
 
 /* Inactive Slot hiding — belt and suspenders.
-   Inline style sets visibility: hidden + opacity: 0 on the Slot div.
-   CSS backup catches edge cases where inline styles are overridden.
+   Primary: inline style on the Slot element (visibility: hidden + opacity: 0).
+   Inline styles can't be overridden by any CSS cascade — this is the
+   bulletproof layer.
+   Backup: CSS rules below catch edge cases (e.g. if inline styles are
+   stripped by a framework or test harness).
    transition: none on descendants prevents children with transition-all
-   from animating the inherited visibility change (CSS visibility is
-   inherited; transition-all transitions it over the child's duration
-   instead of hiding instantly). */
+   from animating the inherited visibility change. */
 .concertina-stable-slot > [inert] {
   visibility: hidden;
   opacity: 0;

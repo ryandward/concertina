@@ -15,6 +15,8 @@ export { Slot } from "./components/slot";
 export type { SlotProps } from "./components/slot";
 export { Hum, Hum as StableText } from "./components/hum";
 export type { HumProps, HumProps as StableTextProps } from "./components/hum";
+export { Vamp, VampContext, useVamp } from "./components/vamp";
+export type { VampProps } from "./components/vamp";
 export { Ensemble, Ensemble as StableCollection } from "./components/ensemble";
 export type { EnsembleProps, EnsembleProps as StableCollectionProps } from "./components/ensemble";
 

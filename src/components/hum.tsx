@@ -5,10 +5,14 @@ import {
   type ElementType,
 } from "react";
 import { injectStyles } from "../internal/inject-styles";
+import { useVamp } from "./vamp";
 
 export interface HumProps extends HTMLAttributes<HTMLElement> {
-  /** Whether data is loading. Shows shimmer when true, children when false. */
-  loading: boolean;
+  /**
+   * Whether data is loading. Shows shimmer when true, children when false.
+   * When omitted, falls back to the nearest `<Vamp>` ancestor's loading state.
+   */
+  loading?: boolean;
   /** HTML element to render. Default: "span". */
   as?: ElementType;
 }
@@ -23,12 +27,19 @@ export interface HumProps extends HTMLAttributes<HTMLElement> {
  *
  * The className is passed through so `1lh` inherits the correct font
  * metrics from the consuming context.
+ *
+ * When no explicit `loading` prop is provided, Hum reads from the
+ * nearest `<Vamp>` ancestor. This lets a single provider control
+ * shimmer state for an entire subtree.
  */
 export const Hum = forwardRef<HTMLElement, HumProps>(
   function Hum({ loading, as: Tag = "span", className, children, ...props }, ref) {
     useInsertionEffect(injectStyles, []);
 
-    if (loading) {
+    const vampLoading = useVamp();
+    const isLoading = loading ?? vampLoading;
+
+    if (isLoading) {
       const merged = className
         ? `concertina-warmup-line ${className}`
         : "concertina-warmup-line";

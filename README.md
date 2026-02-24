@@ -188,13 +188,38 @@ import { Hum } from "concertina";
 
 The `className` is passed through to the shimmer so `1lh` inherits the correct font metrics. The shimmer is exactly as tall as the text it replaces because `1lh` resolves to the element's computed line-height. Not font-size, not a token, not a guess.
 
+#### Vamp: ambient loading for entire subtrees
+
+When many Hum instances share the same loading state (e.g. every cell in a table), threading `loading` to each one is boilerplate. Wrap the subtree in `<Vamp>` and every nested `<Hum>` picks it up automatically.
+
+```tsx
+import { Vamp, Hum } from "concertina";
+
+<Vamp loading={isLoading}>
+  <h2><Hum className="text-xl font-bold">{user?.name}</Hum></h2>
+  <p><Hum className="text-sm text-stone">{user?.email}</Hum></p>
+  <p><Hum className="text-sm">{user?.bio}</Hum></p>
+</Vamp>
+```
+
+No `loading` prop on any Hum. They all read from Vamp. An explicit `loading` prop on any individual Hum still overrides context.
+
+Named after musical **vamping** — repeating a pattern while waiting for a cue.
+
 #### Hum props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `loading` | `boolean` | | Show shimmer (true) or children (false) |
+| `loading` | `boolean` | Vamp context | Show shimmer (true) or children (false). Falls back to nearest `<Vamp>` when omitted. |
 | `as` | `ElementType` | `"span"` | HTML element to render |
 | `className` | `string` | | Applied to both shimmer and content states |
+
+#### Vamp props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `loading` | `boolean` | Whether the subtree is in a loading/warmup state |
+| `children` | `ReactNode` | Content to wrap |
 
 > `StableText` is an alias for `Hum`.
 
@@ -382,6 +407,7 @@ Scrolls an element to the top of its nearest scrollable ancestor. Only touches `
 |---------|------|
 | Two variants swap in one slot | Bellows + Slot |
 | Line of text loading from API | Hum |
+| Many Hum instances share one loading state | Vamp + Hum |
 | List loading from API | Ensemble |
 | Spinner replaced by loaded content | Gigbag + Warmup |
 | Accordion/table shimmer rows | Stub data + WarmupLine (wrapper-once pattern) |

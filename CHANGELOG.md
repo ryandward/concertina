@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.12.0
+
+**Vamp context provider. Slot inline style fix.**
+
+New:
+- `Vamp`: ambient loading provider. Wrapping a subtree in
+  `<Vamp loading={true}>` lets every nested `<Hum>` pick up loading
+  state automatically via React context — no explicit `loading` prop
+  needed on individual Hum instances. Named after musical "vamping"
+  (repeating a pattern while waiting for a cue).
+- `useVamp()`: hook to read the nearest Vamp's loading state.
+- `VampContext`: the raw React context, exported for advanced use.
+- `Hum`'s `loading` prop is now optional. When omitted, Hum reads
+  from the nearest `<Vamp>` ancestor. Explicit prop always wins.
+  Fully backward compatible — no Vamp ancestor = `false` = passthrough.
+
+Fix:
+- `Slot` inline hiding restored. v0.11.0 moved inactive hiding to
+  CSS-only (`[inert]` selector), but CSS specificity wars with
+  consumer stylesheets could override `visibility: hidden`. Inline
+  `visibility: hidden; opacity: 0` is now the primary hiding mechanism
+  again (can't be overridden by any CSS cascade). CSS backup remains.
+
 ## 0.11.0
 
 **Opinionated high-level components. Auto-injected CSS. Musical naming.**
