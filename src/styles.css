@@ -87,6 +87,7 @@
 }
 
 .concertina-warmup-line {
+  height: 1lh;
   border-radius: var(--concertina-warmup-line-radius, 0.125rem);
   background: linear-gradient(
     90deg,
@@ -98,20 +99,12 @@
   animation: concertina-shimmer 1.5s ease-in-out infinite;
 }
 
-.concertina-warmup-line-short {
-  height: var(--concertina-warmup-line-short, 0.5rem);
-  width: 40%;
-}
-
-.concertina-warmup-line-long {
-  height: var(--concertina-warmup-line-long, 0.75rem);
-  width: 75%;
-}
 
 @keyframes concertina-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
 
 /* Glide — enter/exit animation wrapper. */
 .concertina-glide {
@@ -136,6 +129,16 @@
   to   { opacity: 0; max-height: 0; overflow: hidden; }
 }
 
+/* Warmup exit — fade out shimmer lines before content mounts.
+   Applied by useWarmupExit() via className on the grid container. */
+.concertina-warmup-exiting .concertina-warmup-line {
+  animation: concertina-warmup-exit var(--concertina-close-duration, 150ms) ease-out forwards;
+}
+
+@keyframes concertina-warmup-exit {
+  to { opacity: 0; }
+}
+
 /* Respect reduced-motion preferences.
    Disables all animations — accordion open/close, shimmer, and glide enter/exit.
    Layout changes still happen instantly so functionality is preserved. */
@@ -144,7 +147,8 @@
   .concertina-content[data-state="closed"],
   .concertina-glide-entering,
   .concertina-glide-exiting,
-  .concertina-warmup-line {
+  .concertina-warmup-line,
+  .concertina-warmup-exiting .concertina-warmup-line {
     animation-duration: 0s !important;
   }
 }

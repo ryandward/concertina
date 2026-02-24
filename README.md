@@ -178,6 +178,46 @@ All dimensions are CSS custom properties:
 }
 ```
 
+### Shimmer dimensions come from the text styles, not from the shimmer
+
+This is the single most important thing in the library and the easiest to get wrong.
+
+A shimmer line replaces text. It needs to be exactly as tall as the text it replaces. For 17 years, CSS had no unit for "one line of text." `em` is font-size, not line-height. `rem` is the root font-size. `px` is absolute. Every shimmer library picked a number — `height: 0.75em`, `height: 12px`, `height: 1rem` — and it was wrong, because text height is determined by line-height, which is determined by the font styles on the element. A shimmer that invents its own height is a shimmer that shifts layout when the real text arrives.
+
+CSS now has the `lh` unit. `1lh` resolves to the element's computed line-height. The shimmer uses `height: 1lh`. That's not a magic number — it's a relative unit that derives its value from the element's styles, the same way `100%` derives its value from the container's size.
+
+But `1lh` only works if the shimmer has the right styles. A bare `<div className="concertina-warmup-line" />` inherits line-height from its parent. If it's inside a `<span className="text-sm">`, it inherits `text-sm`'s line-height. Correct. But if it's a direct child of a toolbar with no font context, `1lh` resolves against the default line-height. Wrong.
+
+**The `WarmupLine` component exists so you can pass the text styles explicitly:**
+
+```tsx
+// Toolbar — no parent provides text styles, so pass them directly
+{loading
+  ? <Concertina.WarmupLine className="text-sm text-stone flex-1" />
+  : <span className="text-sm text-stone">{count} customers</span>
+}
+
+// Grid cell — parent wrapper provides text styles via inheritance
+<span className="table-val-primary">
+  {row._warmup
+    ? <div className="concertina-warmup-line" />
+    : row.name
+  }
+</span>
+```
+
+In grid cells, the shimmer inherits from its wrapper (wrapper-once pattern). In standalone contexts like toolbars, pass the same `className` you'd put on the text element. The shimmer's `1lh` resolves against those styles and matches the text exactly.
+
+**Width** comes from the container, not the shimmer. In a grid cell, the column definition provides width (`minmax(4rem, auto)`). In a flex toolbar, pass `flex-1` so the shimmer fills the available space. The shimmer never invents a width — it fills whatever its context provides.
+
+```css
+/* The shimmer stretches to fill whatever its container provides */
+grid-template-columns: minmax(10rem, 2fr) minmax(3rem, auto) minmax(4.5rem, auto) auto;
+/*                      name column         qty column          total column        action (StableSlot) */
+```
+
+One thing knows the expected content width: the grid column definition. Zero things should guess it.
+
 ---
 
 ## The stub-data pattern
@@ -203,7 +243,7 @@ const STUB_ROWS = Array.from({ length: 8 }, (_, i) => ({
 cell: ({ row }) => (
   <span className="table-val-primary">
     {row.original._warmup
-      ? <div className="concertina-warmup-line concertina-warmup-line-long" />
+      ? <div className="concertina-warmup-line" />
       : row.original.name
     }
   </span>

@@ -19,6 +19,8 @@ export { Gigbag } from "./components/gigbag";
 export type { GigbagProps } from "./components/gigbag";
 export { Warmup } from "./components/warmup";
 export type { WarmupProps } from "./components/warmup";
+export { WarmupLine } from "./components/warmup-line";
+export type { WarmupLineProps } from "./components/warmup-line";
 export { Glide } from "./components/glide";
 export type { GlideProps } from "./components/glide";
 
@@ -31,6 +33,7 @@ export { useScrollPin } from "./primitives/use-scroll-pin";
 export { useStableSlot } from "./primitives/use-stable-slot";
 export { useTransitionLock } from "./primitives/use-transition-lock";
 export { pinToScrollTop } from "./primitives/pin-to-scroll-top";
+export { useWarmupExit } from "./primitives/use-warmup-exit";
 
 // Legacy hook API (backward compat)
 export { useConcertina } from "./accordion/use-concertina";
