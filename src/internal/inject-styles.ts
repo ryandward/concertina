@@ -14,3 +14,7 @@ export function injectStyles(): void {
   document.head.appendChild(style);
   injected = true;
 }
+
+// Eager injection at import time. Styles are ready before any component mounts.
+// SSR-safe: the typeof document guard no-ops on the server.
+injectStyles();

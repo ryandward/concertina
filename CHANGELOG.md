@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.13.1
+
+**Hum per-instance overhead reduction.**
+
+- `Hum` is now a plain function component (was `forwardRef`). Removes
+  per-instance ref forwarding plumbing. Breaking: `ref` prop no longer
+  accepted on `<Hum>` (rare usage).
+- `Hum` no longer calls `useInsertionEffect`. Style injection is now
+  eager at module scope — `injectStyles()` runs once when
+  `inject-styles.ts` is first imported, before any component mounts.
+- Net effect: Hum goes from `forwardRef` + 2 hooks
+  (`useInsertionEffect` + `useContext`) to plain function + 1 hook
+  (`useContext`). For 200 instances, that's 200 fewer hook registrations.
+
 ## 0.13.0
 
 **Overture: loading-aware subtree wrapper.**

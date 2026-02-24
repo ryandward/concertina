@@ -1,10 +1,5 @@
-import {
-  forwardRef,
-  useInsertionEffect,
-  type HTMLAttributes,
-  type ElementType,
-} from "react";
-import { injectStyles } from "../internal/inject-styles";
+import { type HTMLAttributes, type ElementType } from "react";
+import "../internal/inject-styles";
 import { useVamp } from "./vamp";
 
 export interface HumProps extends HTMLAttributes<HTMLElement> {
@@ -32,31 +27,27 @@ export interface HumProps extends HTMLAttributes<HTMLElement> {
  * nearest `<Vamp>` ancestor. This lets a single provider control
  * shimmer state for an entire subtree.
  */
-export const Hum = forwardRef<HTMLElement, HumProps>(
-  function Hum({ loading, as: Tag = "span", className, children, ...props }, ref) {
-    useInsertionEffect(injectStyles, []);
+export function Hum({ loading, as: Tag = "span", className, children, ...props }: HumProps) {
+  const vampLoading = useVamp();
+  const isLoading = loading ?? vampLoading;
 
-    const vampLoading = useVamp();
-    const isLoading = loading ?? vampLoading;
-
-    if (isLoading) {
-      const merged = className
-        ? `concertina-warmup-line ${className}`
-        : "concertina-warmup-line";
-
-      return (
-        <Tag ref={ref} className={merged} {...props}>
-          <Tag inert>{children}</Tag>
-        </Tag>
-      );
-    }
+  if (isLoading) {
+    const merged = className
+      ? `concertina-warmup-line ${className}`
+      : "concertina-warmup-line";
 
     return (
-      <Tag ref={ref} className={className} {...props}>
-        {children}
+      <Tag className={merged} {...props}>
+        <Tag inert>{children}</Tag>
       </Tag>
     );
   }
-);
+
+  return (
+    <Tag className={className} {...props}>
+      {children}
+    </Tag>
+  );
+}
 
 export { Hum as StableText };
