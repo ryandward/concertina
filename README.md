@@ -14,21 +14,29 @@
 
 <p align="center"><b>47 tests</b> &middot; 716 lines of source &middot; 1 dependency</p>
 
-## Why this exists
+## The problem
 
-Concertina started because accordions in React are broken. You click an item, it expands, and the thing you just clicked scrolls off the screen. The browser shoved everything down to make room and now you're staring at content you didn't ask for while the thing you wanted is somewhere above you. On mobile it's worse — `scrollIntoView` grabs the entire viewport and drags it around like a dog with a sock.
+Layout shift happens when the browser changes the size of a box and moves everything else to compensate. A button swaps for a stepper — the text next to it reflows. A spinner becomes a table — the page jumps 400 pixels. An accordion opens — the thing you clicked scrolls off the screen.
 
-So concertina started as an accordion wrapper with scroll pinning. But the deeper we got, the more we realized accordions are just one instance of a bigger problem: things change size and the browser moves everything else to compensate. Swap a button for a stepper. Replace a spinner with a table. Mount a panel. Unmount it. Same disease, every time.
+The React ecosystem treats this as a **state problem**. Suspense, skeleton libraries, loading spinners — they model the transition between pending and loaded. They give you a nice-looking placeholder that's a completely different DOM structure from the real content, then act surprised when the swap causes a jump.
 
-The core idea is almost embarrassingly simple: don't swap things. Render all the variants at the same time, in the same grid cell, stacked on top of each other. The cell sizes itself to the biggest one. You toggle which one is visible. The box never changes size because all the variants are always in there. No measurement, no ResizeObserver, no layout effect. CSS grid figured it out on the first frame because that's what it already does.
+It's not a state problem. It's a **structure problem.** The box changed size because you swapped the structure inside it.
 
-That covers the most common source of layout shift. Two cases it doesn't cover:
+## The fix
 
-1. **Data loads.** A spinner sits at 48 pixels. The real table shows up at 500. The scroll region has an episode. You can't enumerate all variants upfront because the content is dynamic, so you need a container that remembers its biggest size and refuses to shrink.
+Don't swap structures. Swap what's inside them.
 
-2. **Conditional content.** A panel mounts or unmounts. Everything below it teleports in a single frame. No transition. No grace. On, off, furniture moved.
+Every tool in concertina is a different expression of this one idea:
 
-Concertina has a small primitive for each.
+| What changes | Tool | How it works |
+|---|---|---|
+| Which variant is visible | StableSlot + Slot | Render all variants in one grid cell, toggle visibility |
+| Content loading | Gigbag | Container remembers its biggest size, refuses to shrink |
+| Data arriving in a table | Stub data pattern | Same render path for loading and loaded — shimmer or content inside the same wrapper |
+| A panel mounting/unmounting | Glide | Animated enter/exit instead of instant DOM swap |
+| Which accordion item is open | Root + Item + Content | Scroll pinning keeps the opened item visible |
+
+Structure is the contract. Content is what varies. If you internalize that, the API is obvious. If you don't, no amount of tooling will save you.
 
 ## Install
 
@@ -41,9 +49,13 @@ import * as Concertina from "concertina";
 import "concertina/styles.css";
 ```
 
-## Variant switching: StableSlot + Slot
+---
 
-Your layout shifts when you swap components because the new one is a different size and the browser just rolls with it. The fix: don't swap them. Render all of them at the same time, same grid cell, stacked. The cell sizes to the biggest one. Toggle visibility. The box can't change size. All the variants are always in there.
+## StableSlot + Slot
+
+Two components swap in one slot. An "Add" button becomes a quantity stepper. The stepper is wider. The text next to it jumps left.
+
+The fix: don't swap them. Render both at the same time, in the same grid cell, stacked. The cell sizes to the bigger one. Toggle which one is visible. The box never changes size because both variants are always in there.
 
 ```tsx
 <Concertina.StableSlot axis="width" className="action-slot">
@@ -108,11 +120,11 @@ Every independently appearing element needs its own StableSlot. An Undo link tha
 </div>
 ```
 
-A single Slot inside a StableSlot is valid. It reserves the element's space, showing or hiding it without shift. This is fine. This is good actually.
+A single Slot inside a StableSlot is valid. It reserves the element's space, showing or hiding it without shift.
 
-## Progressive loading: Gigbag + Warmup
+---
 
-You've seen this a thousand times:
+## Gigbag + Warmup
 
 ```jsx
 if (loading) return <Spinner />;      // 48px
@@ -120,11 +132,11 @@ if (empty)   return <EmptyMsg />;     // 64px
 return <BigTable data={data} />;      // 500px+
 ```
 
-The spinner is 48 pixels. The table is 500. When the data arrives, the container quintuples in height and everything the user was looking at gets launched off screen.
+Three different structures, three different heights. Every transition jumps.
 
-Gigbag is a container that remembers its largest-ever size via ResizeObserver and will not shrink. Will not. Put a spinner in there, then a table, then a spinner again — it stays at the table's height the whole time. Like a guitar case. You don't reshape the case every time you take the guitar out. The case is the size of the guitar. Always. It also uses `contain: layout style` so internal reflows don't bother the ancestors.
+Gigbag is a container that remembers its largest-ever size via ResizeObserver and will not shrink. Put a spinner in there, then a table, then a spinner again — it stays at the table's height the whole time. Like a guitar case. You don't reshape the case every time you take the guitar out. It also uses `contain: layout style` so internal reflows don't bother the ancestors.
 
-Warmup is a CSS-only shimmer grid that goes inside the Gigbag while you're loading. Instead of a spinner that tells the browser nothing about what's coming, the Warmup looks like the content. Rows. Columns. Pulsing. The browser knows how tall things will be because you told it. With shapes.
+Warmup is a CSS-only shimmer grid that goes inside the Gigbag while you're loading. Instead of a spinner that tells the browser nothing about what's coming, the Warmup approximates the content's shape. The browser knows how tall things will be because you told it.
 
 ```tsx
 <Concertina.Gigbag axis="height">
@@ -136,7 +148,7 @@ Warmup is a CSS-only shimmer grid that goes inside the Gigbag while you're loadi
 </Concertina.Gigbag>
 ```
 
-The Gigbag ratchets to whichever is taller. On subsequent re-fetches it holds at the table's height instead of collapsing back. The data can come and go. The container does not care.
+The Gigbag ratchets to whichever child is taller. On subsequent re-fetches it holds at the table's height instead of collapsing back.
 
 ### Gigbag props
 
@@ -155,7 +167,7 @@ The Gigbag ratchets to whichever is taller. On subsequent re-fetches it holds at
 
 ### Theming Warmup
 
-All dimensions are CSS custom properties. Override them to match your app:
+All dimensions are CSS custom properties:
 
 ```css
 .concertina-warmup {
@@ -166,9 +178,146 @@ All dimensions are CSS custom properties. Override them to match your app:
 }
 ```
 
-## Conditional content: Glide
+---
 
-`{show && <Panel />}`. The panel is either in the DOM or it's not. When it enters, everything below it gets shoved down in a single frame. When it leaves, everything snaps back up. It's a light switch that also moves your furniture.
+## The stub-data pattern
+
+Gigbag + Warmup works for flat containers. But when your content renders through structured components — an accordion with `Root > Item > Trigger > Content`, or a data table with cell wrappers — a separate loading skeleton is a different DOM structure. Different wrappers, different padding, different height. The swap from skeleton to real content shifts layout. It has to. The structures are different.
+
+This is where the core principle applies directly. Don't build a separate loading path. **Pass placeholder data through the same render path as real data.**
+
+### How it works
+
+Create stub objects with the same shape as your real data, marked with a `_warmup` flag. Pass them to the same component that renders real data. Each cell renders shimmer or content inside the same wrapper — one wrapper definition, ternary on the guts:
+
+```tsx
+// Stub data — same shape as real rows
+const STUB_ROWS = Array.from({ length: 8 }, (_, i) => ({
+  _warmup: true as const,
+  id: `warmup-${i}`,
+  name: null,
+  items: [],
+}));
+
+// Cell renderer — wrapper defined once, content varies inside it
+cell: ({ row }) => (
+  <span className="table-val-primary">
+    {row.original._warmup
+      ? <div className="concertina-warmup-line concertina-warmup-line-long" />
+      : row.original.name
+    }
+  </span>
+)
+
+// Table component — no separate loading branch
+function MyTable({ data, loading }) {
+  return (
+    <Concertina.Root>
+      {(loading ? STUB_ROWS : data).map((row) => (
+        <Concertina.Item key={row.id} value={row.id}>
+          <Concertina.Trigger>
+            {/* cells render shimmer or content in the same wrappers */}
+          </Concertina.Trigger>
+          <Concertina.Content>
+            {row._warmup ? null : <DetailPanel row={row} />}
+          </Concertina.Content>
+        </Concertina.Item>
+      ))}
+    </Concertina.Root>
+  );
+}
+```
+
+The stub rows go through `Root > Item > Trigger > Content` — the exact same components as real rows. The `Content` element exists in the DOM (collapsed, zero height) for both stubs and real data. Every wrapper, every padding, every border is identical. The only difference is what's inside the cells.
+
+### The wrapper-once rule
+
+This is the part that matters. The wrapper is the structural contract — it determines padding, font-size, line-height, and therefore the cell's height. Define it once. Put the ternary inside it. Never write the wrapper in two branches.
+
+```tsx
+// WRONG — wrapper duplicated, will drift apart silently
+if (row.original._warmup) {
+  return <span className="table-val-money"><div className="concertina-warmup-line" /></span>;
+}
+return <span className="table-val-money">${total}</span>;
+
+// RIGHT — wrapper defined once, content switches inside it
+<span className="table-val-money">
+  {row.original._warmup
+    ? <div className="concertina-warmup-line" />
+    : `$${total}`
+  }
+</span>
+```
+
+When the wrapper is duplicated across branches, it will drift. Someone adds a class to the live branch, forgets the warmup branch. The heights diverge. Layout shifts. And nobody notices until a user watches their screen jump on every page load.
+
+One wrapper. One definition. Ternary on the guts. That's the whole rule.
+
+### Action columns with StableSlot
+
+For columns with interactive controls, pass `null` as the entity during warmup. The StableSlot still renders all variants in `visibility: hidden`, reserving the exact same space:
+
+```tsx
+<ActionCell entity={row._warmup ? null : row} />
+```
+
+### What TypeScript enforces (and what it doesn't)
+
+A discriminated union guarantees you check `_warmup` before accessing real data:
+
+```ts
+type WarmupRow = {
+  _warmup: true;
+  id: string;
+};
+
+type RealRow = {
+  _warmup?: never;
+  id: string;
+  name: string;
+  items: Item[];
+};
+
+type Row = WarmupRow | RealRow;
+```
+
+The compiler forces the branch:
+
+```ts
+function renderCell(row: Row) {
+  // TS error: 'name' doesn't exist on WarmupRow
+  return <span className="table-val-primary">{row.name}</span>;
+
+  // compiles — wrapper once, ternary inside
+  return (
+    <span className="table-val-primary">
+      {row._warmup
+        ? <div className="concertina-warmup-line" />
+        : row.name  // TS narrows to RealRow here
+      }
+    </span>
+  );
+}
+```
+
+You can't access `row.name` without checking `_warmup` first. A cell renderer that forgets the check fails at build time.
+
+**What TypeScript does NOT enforce:** that you use the wrapper-once pattern. The compiler can't see inside JSX structure. This compiles without error and shifts layout:
+
+```ts
+// TS is happy. Layout shifts anyway. Don't do this.
+if (row._warmup) return <div className="concertina-warmup-line" />;
+return <span className="table-val-primary">{row.name}</span>;
+```
+
+TypeScript prevents you from forgetting the branch. The wrapper-once pattern prevents you from forgetting the wrapper. Use both.
+
+---
+
+## Glide
+
+`{show && <Panel />}`. The panel is either in the DOM or it's not. When it enters, everything below it gets shoved down in a single frame. When it leaves, everything snaps back up. A light switch that also moves your furniture.
 
 Glide wraps conditional content with enter/exit CSS animations and delays unmount until the exit animation finishes. The panel slides in, the panel slides out, content around it moves smoothly.
 
@@ -196,7 +345,9 @@ When `show` goes true, children mount with a `concertina-glide-entering` class. 
 }
 ```
 
-The height variable is a ceiling, not an exact value. `max-height` is how you animate height on auto-height elements. `overflow: hidden` clips any overshoot. CSS doesn't give us anything better.
+The height variable is a ceiling, not an exact value. `max-height` is how you animate height on auto-height elements. `overflow: hidden` clips any overshoot.
+
+---
 
 ## Composing them
 
@@ -211,7 +362,9 @@ Gigbag and Glide solve different problems and they compose:
 </Concertina.Glide>
 ```
 
-## Dynamic text: useStableSlot
+---
+
+## useStableSlot
 
 For content that changes size unpredictably (prices, names, status messages) where you can't enumerate all variants upfront. This is what Gigbag uses internally. Use it directly when you want a ref-based API instead of a wrapper component.
 
@@ -229,7 +382,7 @@ const slot = Concertina.useStableSlot({ axis: "width" });
 
 Returns `{ ref, style }`. Attach both to the container element.
 
-## Animation suppression: useTransitionLock
+## useTransitionLock
 
 Suppresses CSS transitions during batched state changes. Sets a flag synchronously (batched with state updates in React 18), auto-clears after paint.
 
@@ -246,13 +399,15 @@ const handleChange = (newValue) => {
 </div>
 ```
 
-## Scroll pinning: pinToScrollTop
+## pinToScrollTop
 
 Scrolls an element to the top of its nearest scrollable ancestor. Only touches `scrollTop` on that one container. Never cascades to the viewport — no full-page drag on mobile. Accounts for sticky headers automatically.
 
 ```tsx
 Concertina.pinToScrollTop(element);
 ```
+
+---
 
 ## Accordion
 
@@ -314,6 +469,8 @@ const { rootProps, getItemRef } = Concertina.useConcertina();
 
 If items near the bottom can't scroll to the top, add `padding-bottom: 50vh` to the scroll container.
 
+---
+
 ## Picking the right tool
 
 | Problem | Tool |
@@ -321,6 +478,7 @@ If items near the bottom can't scroll to the top, add `padding-bottom: 50vh` to 
 | Two variants swap in one slot | StableSlot + Slot |
 | Text changes width unpredictably | useStableSlot (or CSS `tabular-nums` for numbers) |
 | Spinner replaced by loaded content | Gigbag + Warmup |
+| Accordion/table loading skeleton | Stub data through same render path |
 | Panel mounts/unmounts conditionally | Glide |
 | Accordion with scroll pinning | Root + Item + Content |
 
