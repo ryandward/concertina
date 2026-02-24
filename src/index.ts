@@ -17,6 +17,8 @@ export { Hum, Hum as StableText } from "./components/hum";
 export type { HumProps, HumProps as StableTextProps } from "./components/hum";
 export { Vamp, VampContext, useVamp } from "./components/vamp";
 export type { VampProps } from "./components/vamp";
+export { Overture } from "./components/overture";
+export type { OvertureProps } from "./components/overture";
 export { Ensemble, Ensemble as StableCollection } from "./components/ensemble";
 export type { EnsembleProps, EnsembleProps as StableCollectionProps } from "./components/ensemble";
 

@@ -26,7 +26,7 @@ It's not a state problem. It's a **structure problem.** The box changed size bec
 
 Don't swap structures. Swap what's inside them.
 
-Concertina gives you three high-level components: **Bellows**, **Hum**, and **Ensemble**. They handle the math so you can focus on the music. CSS is auto-injected on first render. No manual imports needed.
+Concertina gives you four high-level components: **Bellows**, **Hum**, **Overture**, and **Ensemble**. They handle the math so you can focus on the music. CSS is auto-injected on first render. No manual imports needed.
 
 ```bash
 npm install concertina
@@ -225,6 +225,34 @@ Named after musical **vamping** — repeating a pattern while waiting for a cue.
 
 ---
 
+## Overture: temporal stability for arbitrary content
+
+A card, table, or page loads from an API. You want shimmer bones during loading, a smooth fade-out when data arrives, and the container must never collapse during the swap. You don't have a flat list — you have complex, nested JSX.
+
+Overture composes `Vamp` (ambient loading context) + `Gigbag` (size ratchet) + `useWarmupExit` (exit transition) into a single wrapper. Write one JSX tree for both states. Nested `<Hum>` instances read loading state from the Vamp context automatically.
+
+```tsx
+import { Overture, Hum } from "concertina";
+
+<Overture loading={isLoading} exitDuration={150}>
+  <h2><Hum className="text-xl font-bold">{user?.name}</Hum></h2>
+  <p><Hum className="text-sm text-stone">{user?.email}</Hum></p>
+  <Button><Hum>Edit Profile</Hum></Button>
+</Overture>
+```
+
+During loading, every Hum renders a shimmer sized to its ghost children. When loading finishes, the shimmers fade out, real content appears, and the Gigbag ratchet prevents any height collapse.
+
+#### Overture props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `loading` | `boolean` | | Show shimmer (true) or content (false) |
+| `exitDuration` | `number` | | Exit animation duration in ms (match `--concertina-close-duration`) |
+| `as` | `ElementType` | `"div"` | HTML element to render |
+
+---
+
 ## Ensemble: temporal stability for collections
 
 A list loads from an API. You want shimmer rows while loading, then a smooth transition to real items, and the container must never collapse during the swap.
@@ -408,6 +436,7 @@ Scrolls an element to the top of its nearest scrollable ancestor. Only touches `
 | Two variants swap in one slot | Bellows + Slot |
 | Line of text loading from API | Hum |
 | Many Hum instances share one loading state | Vamp + Hum |
+| Card/table/page loading from API | Overture + Hum |
 | List loading from API | Ensemble |
 | Spinner replaced by loaded content | Gigbag + Warmup |
 | Accordion/table shimmer rows | Stub data + WarmupLine (wrapper-once pattern) |

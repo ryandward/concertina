@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.13.0
+
+**Overture: loading-aware subtree wrapper.**
+
+New:
+- `Overture`: composes Vamp + Gigbag + useWarmupExit into a single
+  component. Wraps an arbitrary subtree with ambient loading context,
+  size-ratchet, and exit animation. Write one JSX tree — nested `<Hum>`
+  instances handle the shimmer/content toggle automatically. Named after
+  the opening piece before the real performance.
+
+```tsx
+<Overture loading={isLoading} exitDuration={150}>
+  <h2><Hum className="text-xl">{user?.name}</Hum></h2>
+  <p><Hum className="text-sm">{user?.bio}</Hum></p>
+</Overture>
+```
+
+This is "Ensemble for arbitrary content." Ensemble assumes a flat list
+with `renderItem`; Overture wraps any structure — tables, grids, cards,
+nested components — where the consumer controls the rendering.
+
 ## 0.12.0
 
 **Vamp context provider. Slot inline style fix.**
