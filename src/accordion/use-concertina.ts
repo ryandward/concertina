@@ -35,6 +35,8 @@ export interface UseConcertinaReturn {
  * 3. Uses scrollTop adjustment instead of scrollIntoView (no viewport cascade)
  * 4. Coordinates React state batching so layout is final before scroll measurement
  * 5. Clears the switching flag after paint so future animations work normally
+ *
+ * @deprecated Use `<Root>` instead.
  */
 export function useConcertina(): UseConcertinaReturn {
   const [value, setValue] = useState("");

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { StableSlot } from "../components/stable-slot";
+import { Bellows, StableSlot } from "../components/bellows";
 import { Slot } from "../components/slot";
 
 describe("StableSlot", () => {
@@ -40,7 +40,7 @@ describe("Slot", () => {
     expect(el).toBeVisible();
   });
 
-  it("renders inactive slot with inert and visibility hidden", () => {
+  it("renders inactive slot with inert attribute", () => {
     render(
       <StableSlot>
         <Slot active={false} data-testid="slot">inactive content</Slot>
@@ -48,7 +48,6 @@ describe("Slot", () => {
     );
     const el = screen.getByTestId("slot");
     expect(el).toHaveAttribute("inert");
-    expect(el).toHaveStyle({ visibility: "hidden" });
   });
 
   it("renders as custom element via as prop", () => {
@@ -58,5 +57,59 @@ describe("Slot", () => {
       </StableSlot>
     );
     expect(screen.getByTestId("slot").tagName).toBe("SPAN");
+  });
+});
+
+describe("Bellows with activeNote", () => {
+  it("activates matching Slot via note prop", () => {
+    render(
+      <Bellows activeNote="b">
+        <Slot note="a" data-testid="a">A</Slot>
+        <Slot note="b" data-testid="b">B</Slot>
+      </Bellows>
+    );
+    expect(screen.getByTestId("a")).toHaveAttribute("inert");
+    expect(screen.getByTestId("b")).not.toHaveAttribute("inert");
+  });
+
+  it("explicit active overrides context", () => {
+    render(
+      <Bellows activeNote="b">
+        <Slot active note="a" data-testid="a">A</Slot>
+        <Slot note="b" data-testid="b">B</Slot>
+      </Bellows>
+    );
+    // active=true overrides note mismatch
+    expect(screen.getByTestId("a")).not.toHaveAttribute("inert");
+    expect(screen.getByTestId("b")).not.toHaveAttribute("inert");
+  });
+
+  it("bare Slot defaults to visible", () => {
+    render(
+      <Bellows>
+        <Slot data-testid="bare">content</Slot>
+      </Bellows>
+    );
+    expect(screen.getByTestId("bare")).not.toHaveAttribute("inert");
+  });
+
+  it("switching activeNote toggles slots", () => {
+    const { rerender } = render(
+      <Bellows activeNote="a">
+        <Slot note="a" data-testid="a">A</Slot>
+        <Slot note="b" data-testid="b">B</Slot>
+      </Bellows>
+    );
+    expect(screen.getByTestId("a")).not.toHaveAttribute("inert");
+    expect(screen.getByTestId("b")).toHaveAttribute("inert");
+
+    rerender(
+      <Bellows activeNote="b">
+        <Slot note="a" data-testid="a">A</Slot>
+        <Slot note="b" data-testid="b">B</Slot>
+      </Bellows>
+    );
+    expect(screen.getByTestId("a")).toHaveAttribute("inert");
+    expect(screen.getByTestId("b")).not.toHaveAttribute("inert");
   });
 });

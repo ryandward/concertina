@@ -7,10 +7,11 @@ import { useState, useEffect, useRef } from "react";
  * for one animation cycle so warmup lines can fade out before
  * real content mounts.
  *
+ * @deprecated Use `<Ensemble>` instead.
  * @param loading - Whether data is still loading
- * @param duration - Exit animation duration in ms (default 150, matches CSS)
+ * @param duration - Exit animation duration in ms. Must match CSS --concertina-close-duration.
  */
-export function useWarmupExit(loading: boolean, duration = 150) {
+export function useWarmupExit(loading: boolean, duration: number) {
   const [exiting, setExiting] = useState(false);
   const prevLoading = useRef(loading);
 

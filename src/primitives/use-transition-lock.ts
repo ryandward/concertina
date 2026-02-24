@@ -11,6 +11,8 @@ import { useState, useEffect, useCallback } from "react";
  * Usage:
  *   const { locked, lock } = useTransitionLock();
  *   <div data-locked={locked || undefined}>...</div>
+ *
+ * @deprecated Use `<Root>` instead.
  */
 export function useTransitionLock() {
   const [locked, setLocked] = useState(false);

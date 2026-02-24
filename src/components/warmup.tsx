@@ -1,9 +1,10 @@
-import { forwardRef, type HTMLAttributes, type ElementType } from "react";
+import { forwardRef, useInsertionEffect, type HTMLAttributes, type ElementType } from "react";
+import { injectStyles } from "../internal/inject-styles";
 
 export interface WarmupProps extends HTMLAttributes<HTMLElement> {
-  /** Number of placeholder rows. Default: 3. */
-  rows?: number;
-  /** Number of columns per row. Default: 1. */
+  /** Number of placeholder rows. */
+  rows: number;
+  /** Number of columns per row. */
   columns?: number;
   /** HTML element to render. Default: "div". */
   as?: ElementType;
@@ -20,23 +21,30 @@ export interface WarmupProps extends HTMLAttributes<HTMLElement> {
  * without forking.
  */
 export const Warmup = forwardRef<HTMLElement, WarmupProps>(
-  function Warmup({ rows = 3, columns = 1, as: Tag = "div", className, children, ...props }, ref) {
+  function Warmup({ rows, columns, as: Tag = "div", className, children, ...props }, ref) {
+    useInsertionEffect(injectStyles, []);
     const merged = className
       ? `concertina-warmup ${className}`
       : "concertina-warmup";
 
-    const cells = Array.from({ length: rows * columns }, (_, i) => (
+    const count = columns ? rows * columns : rows;
+
+    const cells = Array.from({ length: count }, (_, i) => (
       <div key={i} className="concertina-warmup-bone">
         <div className="concertina-warmup-line" />
         <div className="concertina-warmup-line" />
       </div>
     ));
 
+    const gridStyle = columns
+      ? { gridTemplateColumns: `repeat(${columns}, auto)`, gridTemplateAreas: `'${"chamber ".repeat(columns).trim()}'` }
+      : { gridTemplateAreas: "'chamber'" };
+
     return (
       <Tag
         ref={ref}
         className={merged}
-        style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+        style={gridStyle}
         {...props}
       >
         {cells}

@@ -1,5 +1,8 @@
 import { useState, useCallback, useRef, type CSSProperties } from "react";
-import type { Axis } from "../components/stable-slot";
+import type { Axis } from "../components/bellows";
+
+/** Ratchet starts below any possible observation so the first resize always wins. */
+const RATCHET_FLOOR = -Infinity;
 
 interface UseStableSlotOptions {
   /** Which axis to ratchet. Default: "both". */
@@ -25,13 +28,15 @@ interface UseStableSlotReturn {
  * 3. setStyle only called when ratchet grows — no infinite loops
  * 4. RefCallback disconnects observer on unmount — no leak
  * 5. SSR graceful no-op — typeof ResizeObserver guard
+ *
+ * @deprecated Use `<Gigbag>` instead.
  */
 export function useStableSlot(
   options: UseStableSlotOptions = {}
 ): UseStableSlotReturn {
   const { axis = "both" } = options;
   const [style, setStyle] = useState<CSSProperties>({});
-  const maxRef = useRef({ w: 0, h: 0 });
+  const maxRef = useRef({ w: RATCHET_FLOOR, h: RATCHET_FLOOR });
   const observerRef = useRef<ResizeObserver | null>(null);
 
   const ref = useCallback(

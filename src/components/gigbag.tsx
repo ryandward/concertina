@@ -1,6 +1,8 @@
-import { forwardRef, type HTMLAttributes, type ElementType } from "react";
+import { forwardRef, useInsertionEffect, type HTMLAttributes, type ElementType } from "react";
 import { useStableSlot } from "../primitives/use-stable-slot";
-import type { Axis } from "./stable-slot";
+import { mergeRefs } from "../internal/merge-refs";
+import { injectStyles } from "../internal/inject-styles";
+import type { Axis } from "./bellows";
 
 export interface GigbagProps extends HTMLAttributes<HTMLElement> {
   /** Which axis to ratchet. Default: "height". */
@@ -20,6 +22,7 @@ export interface GigbagProps extends HTMLAttributes<HTMLElement> {
  */
 export const Gigbag = forwardRef<HTMLElement, GigbagProps>(
   function Gigbag({ axis = "height", as: Tag = "div", className, style, children, ...props }, fwdRef) {
+    useInsertionEffect(injectStyles, []);
     const { ref: ratchetRef, style: ratchetStyle } = useStableSlot({ axis });
 
     const merged = className
@@ -28,11 +31,7 @@ export const Gigbag = forwardRef<HTMLElement, GigbagProps>(
 
     return (
       <Tag
-        ref={(el: HTMLElement | null) => {
-          ratchetRef(el);
-          if (typeof fwdRef === "function") fwdRef(el);
-          else if (fwdRef) fwdRef.current = el;
-        }}
+        ref={mergeRefs(ratchetRef, fwdRef)}
         className={merged}
         style={{ ...ratchetStyle, ...style }}
         {...props}

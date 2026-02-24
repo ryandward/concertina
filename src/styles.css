@@ -114,6 +114,11 @@
   animation: concertina-shimmer 1.5s ease-in-out infinite;
 }
 
+/* Inert ghost inside a warmup-line — sizes the shimmer to match
+   content width exactly. Invisible and non-interactive via [inert]. */
+.concertina-warmup-line > [inert] {
+  visibility: hidden;
+}
 
 @keyframes concertina-shimmer {
   0% { background-position: 200% 0; }

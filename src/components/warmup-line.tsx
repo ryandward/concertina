@@ -1,4 +1,5 @@
-import { forwardRef, type HTMLAttributes, type ElementType } from "react";
+import { forwardRef, useInsertionEffect, type HTMLAttributes, type ElementType } from "react";
+import { injectStyles } from "../internal/inject-styles";
 
 export interface WarmupLineProps extends HTMLAttributes<HTMLElement> {
   /** HTML element to render. Default: "div". */
@@ -19,6 +20,7 @@ export interface WarmupLineProps extends HTMLAttributes<HTMLElement> {
  */
 export const WarmupLine = forwardRef<HTMLElement, WarmupLineProps>(
   function WarmupLine({ as: Tag = "div", className, ...props }, ref) {
+    useInsertionEffect(injectStyles, []);
     const merged = className
       ? `concertina-warmup-line ${className}`
       : "concertina-warmup-line";

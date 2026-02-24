@@ -8,11 +8,15 @@ export { ConcertinaStore, ConcertinaContext } from "./accordion/store";
 // Re-export Radix primitives that need no wrapping
 export { Trigger, Header } from "@radix-ui/react-accordion";
 
-// Components — thin compositions (v0.5.0+)
-export { StableSlot } from "./components/stable-slot";
-export type { StableSlotProps, Axis } from "./components/stable-slot";
+// High-level compositions (v0.11.0+)
+export { Bellows, Bellows as StableSlot } from "./components/bellows";
+export type { BellowsProps, BellowsProps as StableSlotProps, Axis } from "./components/bellows";
 export { Slot } from "./components/slot";
 export type { SlotProps } from "./components/slot";
+export { Hum, Hum as StableText } from "./components/hum";
+export type { HumProps, HumProps as StableTextProps } from "./components/hum";
+export { Ensemble, Ensemble as StableCollection } from "./components/ensemble";
+export type { EnsembleProps, EnsembleProps as StableCollectionProps } from "./components/ensemble";
 
 // Progressive loading (v0.7.0+)
 export { Gigbag } from "./components/gigbag";

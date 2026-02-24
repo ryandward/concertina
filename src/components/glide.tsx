@@ -1,9 +1,11 @@
 import {
   forwardRef,
+  useInsertionEffect,
   type HTMLAttributes,
   type ElementType,
 } from "react";
 import { usePresence } from "../primitives/use-presence";
+import { injectStyles } from "../internal/inject-styles";
 
 export interface GlideProps extends HTMLAttributes<HTMLElement> {
   /** Whether the content is visible. */
@@ -20,6 +22,7 @@ export interface GlideProps extends HTMLAttributes<HTMLElement> {
  */
 export const Glide = forwardRef<HTMLElement, GlideProps>(
   function Glide({ show, as: Tag = "div", className, children, ...props }, ref) {
+    useInsertionEffect(injectStyles, []);
     const { mounted, phase, onAnimationEnd } = usePresence(show);
 
     if (!mounted) return null;

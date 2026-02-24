@@ -8,4 +8,5 @@ export default defineConfig({
   jsx: "automatic",
   external: ["react", "react-dom"],
   noExternal: [/^@radix-ui/],
+  loader: { ".css": "text" },
 });

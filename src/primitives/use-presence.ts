@@ -24,6 +24,8 @@ export interface UsePresenceReturn {
  *   show=false → "exiting" → animationEnd → unmount
  *
  * Extracted from Glide so any component can use animated presence.
+ *
+ * @deprecated Use `<Glide>` instead.
  */
 export function usePresence(show: boolean): UsePresenceReturn {
   const [mounted, setMounted] = useState(show);

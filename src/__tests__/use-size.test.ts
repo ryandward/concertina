@@ -45,10 +45,11 @@ function fireResize(target: Element, w: number, h: number) {
 }
 
 describe("useSize", () => {
-  it("returns ref and initial zero size", () => {
+  it("returns ref and NaN initial size (no observation yet)", () => {
     const { result } = renderHook(() => useSize());
     expect(typeof result.current.ref).toBe("function");
-    expect(result.current.size).toEqual({ width: 0, height: 0 });
+    expect(result.current.size.width).toBeNaN();
+    expect(result.current.size.height).toBeNaN();
   });
 
   it("observes element with border-box", () => {
@@ -108,6 +109,7 @@ describe("useSize", () => {
     const el = document.createElement("div");
     // Should not throw
     act(() => result.current.ref(el));
-    expect(result.current.size).toEqual({ width: 0, height: 0 });
+    expect(result.current.size.width).toBeNaN();
+    expect(result.current.size.height).toBeNaN();
   });
 });

@@ -1,11 +1,12 @@
 import {
   forwardRef,
   useContext,
-  useCallback,
+  useMemo,
   type ComponentPropsWithoutRef,
 } from "react";
 import * as Accordion from "@radix-ui/react-accordion";
 import { ConcertinaContext } from "./store";
+import { mergeRefs } from "../internal/merge-refs";
 
 export const Item = forwardRef<
   HTMLDivElement,
@@ -13,17 +14,8 @@ export const Item = forwardRef<
 >(function Item({ value, ...props }, forwardedRef) {
   const store = useContext(ConcertinaContext);
 
-  const mergedRef = useCallback(
-    (el: HTMLDivElement | null) => {
-      // Forward ref
-      if (typeof forwardedRef === "function") {
-        forwardedRef(el);
-      } else if (forwardedRef) {
-        forwardedRef.current = el;
-      }
-      // Register with store for scroll pinning
-      store?.setItemRef(value, el);
-    },
+  const mergedRef = useMemo(
+    () => mergeRefs(forwardedRef, (el) => store?.setItemRef(value, el)),
     [forwardedRef, store, value]
   );
 

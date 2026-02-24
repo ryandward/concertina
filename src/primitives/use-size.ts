@@ -5,10 +5,12 @@ export interface Size {
   height: number;
 }
 
+const NO_OBSERVATION: Size = { width: Number.NaN, height: Number.NaN };
+
 interface UseSizeReturn {
   /** RefCallback — attach to the element to observe. */
   ref: (el: HTMLElement | null) => void;
-  /** Current border-box size. Starts at { width: 0, height: 0 }. */
+  /** Current border-box size. NaN before first observation. */
   size: Size;
 }
 
@@ -20,9 +22,11 @@ interface UseSizeReturn {
  * conditional rendering, animations).
  *
  * For a ratcheting min-size that only grows, use useStableSlot instead.
+ *
+ * @deprecated Use `<Gigbag>` instead.
  */
 export function useSize(): UseSizeReturn {
-  const [size, setSize] = useState<Size>({ width: 0, height: 0 });
+  const [size, setSize] = useState<Size>(NO_OBSERVATION);
   const observerRef = useRef<ResizeObserver | null>(null);
 
   const ref = useCallback((el: HTMLElement | null) => {
