@@ -66,6 +66,16 @@
   flex-direction: column;
 }
 
+/* CSS-level backup for inactive Slot hiding.
+   The Slot component sets visibility: hidden + opacity: 0 via inline style,
+   but some CSS environments (layer interactions, grid child overrides) can
+   interfere with inline styles. The [inert] attribute is always present on
+   inactive Slots, giving us a reliable CSS selector. */
+.concertina-stable-slot > [inert] {
+  visibility: hidden;
+  opacity: 0;
+}
+
 /* Gigbag — size-reserving container.
    contain isolates internal reflow from ancestors. */
 .concertina-gigbag {

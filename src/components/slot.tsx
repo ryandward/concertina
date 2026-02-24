@@ -20,10 +20,15 @@ function inactiveStyle(_axis: Axis): CSSProperties {
   // to the CSS grid track sizing.  The grid cell sizes to the largest
   // child, giving the StableSlot a fixed bounding box.
   //
+  // visibility: hidden keeps the element in layout flow.
+  // opacity: 0 is a belt-and-suspenders backup — some CSS environments
+  // (Tailwind v4 layer interactions, grid child display overrides) can
+  // leave visibility-hidden content partially painted.
+  //
   // No overflow: hidden — causes grid to clamp auto minimum to 0.
   // No maxHeight/maxWidth: 0 — causes browsers to skip the element's
   // cross-axis contribution to grid track sizing.
-  return { visibility: "hidden" };
+  return { visibility: "hidden", opacity: 0 };
 }
 
 /**
@@ -31,10 +36,11 @@ function inactiveStyle(_axis: Axis): CSSProperties {
  * All slots overlap via CSS grid. Inactive slots are hidden
  * but still contribute to grid cell sizing.
  *
- * Three things work together:
+ * Four things work together:
  * 1. grid-area: 1/1 — all slots overlap in the same cell
- * 2. visibility: hidden — invisible but in layout flow
+ * 2. visibility: hidden + opacity: 0 — invisible but in layout flow
  * 3. inert — no focus, no clicks, no screen reader
+ * 4. CSS backup via [inert] selector in styles.css
  */
 export const Slot = forwardRef<HTMLElement, SlotProps>(
   function Slot({ active, as: Tag = "div", style, children, ...props }, ref) {
