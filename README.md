@@ -465,6 +465,152 @@ The `inert` attribute shipped before `1lh` in every browser. No polyfills. No fa
 
 These are proposals, not commitments. If any would unblock your project, open an issue.
 
+---
+
+## Core Stability Engine (`concertina/core`)
+
+The Core Stability Engine is a high-performance sub-package for virtualizing large datasets. Import from the sub-path:
+
+```tsx
+import {
+  useStabilityOrchestrator,
+  VirtualChamber,
+  createRecordBatchStream,
+} from "concertina/core";
+import type { RowProxy, ColumnSchema } from "concertina/core";
+```
+
+It runs all data work inside a dedicated Web Worker. The main thread receives only the rows currently visible on screen, as a single transferred `ArrayBuffer`. No data is ever copied; no JSON is ever parsed on the main thread.
+
+### Architecture
+
+```
+Main thread                     DataWorker (off-thread)
+──────────────────────          ──────────────────────────────────
+useStabilityOrchestrator        Columnar storage
+  │                               NumericColumn (f64/i32/u32/bool)
+  ├─ ingest(stream)               Utf8Column (offset + bytes)
+  │    └─ pump: one batch ─INGEST─▶  ListUtf8Column (3-level index)
+  │         await INGEST_ACK ◀──────── commit → INGEST_ACK
+  │         next batch → ...
+  │
+  ├─ scroll → SET_WINDOW ──────▶ packWindowBuffer()
+  │                              └─ single ArrayBuffer ─WINDOW_UPDATE─▶
+  │                                                   ◀─ transferred
+  ├─ rAF → FRAME_ACK ──────────▶ BackpressureController
+  │
+  └─ VirtualChamber
+       buildAccessors(buffer)   ← reads transferred ArrayBuffer, zero-copy
+       buildRowProxy(accessors) ← column → scalar or string[]
+       pool nodes: constant DOM count, recycled by CSS transform
+```
+
+### Binary wire format
+
+All multi-byte values are little-endian. Every INGEST payload and every WINDOW_UPDATE payload uses this layout:
+
+```
+Header (16 bytes):
+  [0]  u32  magic      = 0xac1dc0de
+  [4]  u32  seq        monotonic batch sequence number
+  [8]  u32  rowCount
+ [12]  u32  colCount
+
+Column Descriptors (colCount × 8 bytes):
+  [+0] u32  typeTag    (0=f64, 1=i32, 2=u32, 3=bool, 4=timestamp_ms, 5=utf8, 6=list_utf8)
+  [+4] u32  byteLen    byte length of this column's data block
+
+Column Data Blocks (variable, one per column):
+
+  f64 / timestamp_ms  rowCount × 8 bytes  (Float64Array, little-endian)
+  i32                 rowCount × 4 bytes  (Int32Array)
+  u32                 rowCount × 4 bytes  (Uint32Array)
+  bool                rowCount × 1 byte   (Uint8Array, 0 or 1)
+
+  utf8                (rowCount+1) × 4 bytes  Uint32 offsets (row i → bytes[offsets[i]..offsets[i+1]])
+                      Σ(string lengths) bytes  Uint8 data
+
+  list_utf8           4 bytes              u32 totalItems
+                      (rowCount+1) × 4     Uint32 rowOffsets
+                        row i → items[rowOffsets[i]..rowOffsets[i+1])
+                      (totalItems+1) × 4   Uint32 itemOffsets
+                        item j → bytes[itemOffsets[j]..itemOffsets[j+1])
+                      Σ(item byte lengths)  Uint8 bytes (UTF-8)
+```
+
+`list_utf8` is a three-level nested index. The decoder in `VirtualChamber` walks:
+1. `rowOffsets[localRow]..rowOffsets[localRow+1]` → item range for this row
+2. `itemOffsets[j]..itemOffsets[j+1]` → byte range for item j
+3. `TextDecoder.decode(bytes.subarray(...))` → string
+
+`RowProxy.get()` returns `string[]` for `list_utf8` columns — no `JSON.parse` on the main thread.
+
+### INGEST_ACK backpressure protocol
+
+Without flow control, a 1M-row dataset would queue all batches in the IPC channel simultaneously (~300 MB). The INGEST_ACK loop bounds this to one batch in flight at a time:
+
+```
+Main thread pump                    DataWorker
+─────────────────                   ──────────
+read batch N from stream
+register ackResolvers[N] = {resolve, reject}
+postMessage(INGEST, [buffer], N)  →  parseBatch()
+                                     commit to columnar storage
+                                     emit INGEST_ACK(N)
+resolve(ackResolvers[N])         ←
+read batch N+1 from stream
+...
+```
+
+**IPC queue depth: O(1) regardless of dataset size.**
+
+If the worker crashes (`onerror`), all pending `ackResolvers` are rejected immediately — the pump unblocks, and `store.setStatus("error")` is set. The pump does not zombie-wait.
+
+### Supported column types
+
+| Schema type    | JS input value | RowProxy return type |
+|----------------|----------------|----------------------|
+| `f64`          | `number`       | `number`             |
+| `i32`          | `number`       | `number`             |
+| `u32`          | `number`       | `number`             |
+| `bool`         | `boolean`      | `boolean`            |
+| `timestamp_ms` | `number` (epoch ms) | `number`        |
+| `utf8`         | `string`       | `string`             |
+| `list_utf8`    | `string[]`     | `string[]`           |
+
+### Parallel list columns
+
+For structs that require both an `id` and a `label` (e.g. `{ id: string; displayName: string }`), encode as two parallel `list_utf8` columns and zip them in `renderRow`:
+
+```tsx
+// Schema
+{ name: "organism_ids",   type: "list_utf8", maxContentChars: 36 },
+{ name: "organism_names", type: "list_utf8", maxContentChars: 80 },
+
+// fileToRow
+organism_ids:   f.organisms.map(o => o.id),
+organism_names: f.organisms.map(o => o.displayName),
+
+// renderRow — O(k) zip, no JSON.parse
+const ids   = proxy.get("organism_ids")   as string[];
+const names = proxy.get("organism_names") as string[];
+const orgs  = ids.map((id, i) => ({ id, displayName: names[i] ?? "" }));
+```
+
+The DataWorker enforces that parallel columns maintain identical row counts after every batch commit. A count mismatch emits `INGEST_ERROR` and the pump is still ACK'd (so it does not stall), but the store transitions to the error state.
+
+### Zero-Measurement layout
+
+Column pixel widths are computed entirely in the worker from schema metadata — no DOM measurement ever happens:
+
+```
+computedWidth = fixedWidth ?? (maxContentChars × charWidthHint + CELL_H_PADDING × 2)
+```
+
+`CELL_H_PADDING` is 16 px. A 14 px monospace font uses `charWidthHint: 8`. Widths are resolved once at `INIT` and re-sent with every `WINDOW_UPDATE`.
+
+---
+
 ## License
 
 MIT

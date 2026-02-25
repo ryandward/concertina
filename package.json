@@ -1,6 +1,6 @@
 {
   "name": "concertina",
-  "version": "0.13.1",
+  "version": "1.0.0",
   "description": "React toolkit for layout stability.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -25,6 +25,16 @@
       "require": {
         "types": "./dist/accordion.d.cts",
         "default": "./dist/accordion.cjs"
+      }
+    },
+    "./core": {
+      "import": {
+        "types": "./dist/core/index.d.ts",
+        "default": "./dist/core/index.js"
+      },
+      "require": {
+        "types": "./dist/core/index.d.cts",
+        "default": "./dist/core/index.cjs"
       }
     },
     "./styles.css": "./dist/styles.css"
