@@ -1,4 +1,4 @@
-import { type HTMLAttributes, type ElementType } from "react";
+import { type HTMLAttributes, type ElementType, type Ref } from "react";
 import "../internal/inject-styles";
 import { useVamp } from "./vamp";
 
@@ -10,6 +10,8 @@ export interface HumProps extends HTMLAttributes<HTMLElement> {
   loading?: boolean;
   /** HTML element to render. Default: "span". */
   as?: ElementType;
+  /** Forwarded ref (React 19 style). */
+  ref?: Ref<HTMLElement>;
 }
 
 /**
