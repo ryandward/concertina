@@ -190,7 +190,11 @@ export function useStabilityOrchestrator(
     const lay = layoutRef.current;
     if (!el || !lay || lay.rowHeight === 0) return;
 
-    const startRow = asRowIndex(Math.floor(el.scrollTop / lay.rowHeight));
+    // DOM-traced pitch overrides Worker's rowHeight when available.
+    const p  = store.getState().pitch;
+    const rh = p > 0 ? p : lay.rowHeight;
+
+    const startRow = asRowIndex(Math.floor(el.scrollTop / rh));
     const rowCount = lay.viewportRows + overscanRows * 2;
 
     workerRef.current?.postMessage({
@@ -198,7 +202,7 @@ export function useStabilityOrchestrator(
       startRow,
       rowCount,
     } satisfies WorkerCommand);
-  }, [overscanRows]);
+  }, [overscanRows, store]);
 
   // ── containerRef callback ─────────────────────────────────────────────────────
 
@@ -322,13 +326,16 @@ export function useStabilityOrchestrator(
     const lay = layoutRef.current;
     if (!el || !lay) return;
 
-    el.scrollTo({ top: row * lay.rowHeight, behavior: "smooth" });
+    const p  = store.getState().pitch;
+    const rh = p > 0 ? p : lay.rowHeight;
+
+    el.scrollTo({ top: row * rh, behavior: "smooth" });
     workerRef.current?.postMessage({
       type:     "SET_WINDOW",
       startRow: asRowIndex(Math.max(0, row - overscanRows)),
       rowCount: lay.viewportRows + overscanRows * 2,
     } satisfies WorkerCommand);
-  }, [overscanRows]);
+  }, [overscanRows, store]);
 
   return useMemo(
     () => ({ containerRef, store, ingest, scrollToRow }),

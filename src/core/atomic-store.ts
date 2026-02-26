@@ -76,6 +76,11 @@ export class AtomicStore {
     this.merge({ status, error: error ?? this.state.error });
   }
 
+  /** Set DOM-traced row pitch. 0 resets to Worker-computed rowHeight. */
+  setPitch(px: number): void {
+    if (this.state.pitch !== px) this.merge({ pitch: px });
+  }
+
   private merge(patch: Partial<StoreState>): void {
     const next = { ...this.state, ...patch } as StoreState;
     this.state = next;

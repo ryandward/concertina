@@ -609,6 +609,32 @@ computedWidth = fixedWidth ?? (maxContentChars × charWidthHint + CELL_H_PADDING
 
 `CELL_H_PADDING` is 16 px. A 14 px monospace font uses `charWidthHint: 8`. Widths are resolved once at `INIT` and re-sent with every `WINDOW_UPDATE`.
 
+### DOM-traced pitch
+
+The worker computes a `rowHeight` from `rowHeightHint` at `INIT` time, but real rows may be taller due to padding, borders, or font metrics that differ from the hint. **Pitch** lets the main thread override the worker's row height with a DOM-measured value.
+
+```tsx
+// Measure actual row height from the DOM (e.g. from a ghost/warmup row)
+const [measuredPitch, setMeasuredPitch] = useState(0);
+const ghostRef = useCallback((el) => {
+  if (el) setMeasuredPitch(el.getBoundingClientRect().height);
+}, []);
+
+// Push to the store — VirtualChamber and scroll handler read it automatically
+useEffect(() => {
+  if (measuredPitch > 0) store.setPitch(measuredPitch);
+}, [measuredPitch, store]);
+```
+
+When `pitch > 0`, VirtualChamber uses it instead of `layout.rowHeight` for:
+- **Spacer height**: `totalRows × pitch` (scrollbar range)
+- **Pool node height**: each pool `<div>` gets `height: pitch`
+- **translateY**: row positioning uses `rowIndex × pitch`
+- **Scroll handler**: `SET_WINDOW` start row = `Math.floor(scrollTop / pitch)`
+- **scrollToRow**: programmatic scroll uses `row × pitch`
+
+When `pitch` is `0` (the default), all math falls back to the worker's `layout.rowHeight`. This means existing code that doesn't call `setPitch` continues to work unchanged.
+
 ---
 
 ## License

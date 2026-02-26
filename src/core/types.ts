@@ -217,6 +217,8 @@ export interface StoreState {
   readonly backpressure: BackpressureState;
   readonly totalRows: number;
   readonly error: string | null;
+  /** DOM-traced row pitch in px. 0 = use layout.rowHeight from Worker. */
+  readonly pitch: number;
 }
 
 export const INITIAL_STORE_STATE: StoreState = {
@@ -226,4 +228,5 @@ export const INITIAL_STORE_STATE: StoreState = {
   backpressure: { strategy: "NOMINAL", queueDepth: 0, avgRenderMs: asMs(0) },
   totalRows: 0,
   error: null,
+  pitch: 0,
 };

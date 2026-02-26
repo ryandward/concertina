@@ -195,7 +195,7 @@ interface PoolAssignment {
 
 function buildPoolAssignments(
   win:      DataWindow,
-  layout:   ViewportLayout,
+  rowHeight: number,
   poolSize: number,
 ): PoolAssignment[] {
   const assignments: PoolAssignment[] = [];
@@ -206,7 +206,7 @@ function buildPoolAssignments(
       poolSlot:   asPoolSlot(i % poolSize),
       rowIndex:   asRowIndex(rowIndex),
       localIndex: i,
-      y:          rowIndex * layout.rowHeight,
+      y:          rowIndex * rowHeight,
     });
   }
 
@@ -239,6 +239,7 @@ export function VirtualChamber(
 ) {
   const layout = useAtomicSlice(store, s => s.layout);
   const win    = useAtomicSlice(store, s => s.window);
+  const pitch  = useAtomicSlice(store, s => s.pitch);
 
   // Build column accessors once per window update, not per row render.
   const accessors = useMemo(
@@ -248,9 +249,13 @@ export function VirtualChamber(
 
   const poolSize = layout ? layout.viewportRows + OVERSCAN_ROWS * 2 : 0;
 
+  // DOM-traced pitch overrides Worker's rowHeight when available.
+  // pitch = 0 means "not yet measured" → fall back to layout.rowHeight.
+  const rh = (pitch && pitch > 0 ? pitch : layout?.rowHeight) ?? 0;
+
   const assignments = useMemo(
-    () => (win && layout ? buildPoolAssignments(win, layout, poolSize) : []),
-    [win, layout, poolSize],
+    () => (win && rh > 0 ? buildPoolAssignments(win, rh, poolSize) : []),
+    [win, rh, poolSize],
   );
 
   if (!layout) return null;
@@ -268,11 +273,11 @@ export function VirtualChamber(
     >
       {/*
         Spacer: gives the scrollbar an accurate range without rendering data.
-        height = totalRows × rowHeight — can be millions of pixels.
+        height = totalRows × rh (pitch-aware).
       */}
       <div
         aria-hidden
-        style={{ height: layout.totalHeight, pointerEvents: "none" }}
+        style={{ height: layout.totalRows * rh, pointerEvents: "none" }}
       />
 
       {/*
@@ -290,7 +295,7 @@ export function VirtualChamber(
               top:        0,
               left:       0,
               right:      0,
-              height:     layout.rowHeight,
+              height:     rh,
               transform:  `translateY(${y}px)`,
               willChange: "transform",
               contain:    "layout style",
