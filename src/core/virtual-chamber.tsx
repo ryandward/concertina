@@ -14,11 +14,9 @@
  */
 
 import {
-  forwardRef,
   useMemo,
   type CSSProperties,
   type ReactNode,
-  type Ref,
 } from "react";
 import { useAtomicSlice } from "./atomic-store";
 import type { AtomicStore } from "./atomic-store";
@@ -226,13 +224,18 @@ export interface VirtualChamberProps {
    * Receives a RowProxy for schema-safe column access and the absolute row index.
    */
   renderRow: (row: RowProxy, rowIndex: RowIndex) => ReactNode;
+  /**
+   * Callback ref for the scroll container element.
+   * Pass the `containerRef` returned by useStabilityOrchestrator directly.
+   * Using a plain callback avoids React namespace conflicts across package boundaries.
+   */
+  containerRef?: (el: HTMLElement | null) => void;
   className?: string;
   style?: CSSProperties;
 }
 
-function VirtualChamberInner(
-  { store, renderRow, className, style }: VirtualChamberProps,
-  fwdRef: Ref<HTMLDivElement>,
+export function VirtualChamber(
+  { store, renderRow, containerRef, className, style }: VirtualChamberProps,
 ) {
   const layout = useAtomicSlice(store, s => s.layout);
   const win    = useAtomicSlice(store, s => s.window);
@@ -254,7 +257,7 @@ function VirtualChamberInner(
 
   return (
     <div
-      ref={fwdRef}
+      ref={containerRef}
       className={className}
       style={{
         position: "relative",
@@ -303,6 +306,3 @@ function VirtualChamberInner(
   );
 }
 
-export const VirtualChamber = forwardRef(VirtualChamberInner) as (
-  props: VirtualChamberProps & { ref?: Ref<HTMLDivElement> },
-) => React.ReactElement | null;
