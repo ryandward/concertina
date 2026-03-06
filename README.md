@@ -12,7 +12,7 @@
   <a href="https://github.com/ryandward/concertina/actions/workflows/ci.yml"><img src="https://github.com/ryandward/concertina/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
 </p>
 
-<p align="center"><b>92 tests</b> &middot; ~1200 lines of source &middot; 1 dependency</p>
+<p align="center"><b>146 tests</b> &middot; ~1400 lines of source &middot; 1 dependency</p>
 
 ## The problem
 
@@ -35,6 +35,19 @@ npm install concertina
 ```tsx
 import { Bellows, Slot, Hum, Ensemble } from "concertina";
 // That's it. No CSS import required.
+```
+
+Every musical name has a semantic alias. Use whichever reads better in your codebase:
+
+| Musical | Alias | Purpose |
+|---------|-------|---------|
+| `Bellows` | `StableSlot` | Spatial stability container |
+| `Hum` | `StableText` | Loading-aware text shimmer |
+| `Ensemble` | `StableCollection` | Loading-aware list |
+
+```tsx
+// Same components, different names
+import { StableSlot, Slot, StableText, StableCollection } from "concertina";
 ```
 
 > SSR users: keep `import "concertina/styles.css"` in your server entry. Auto-injection runs on first client render, but SSR needs the styles before that.
@@ -131,6 +144,8 @@ How it works:
 
 - `display: grid` on the container, `grid-area: 1/1` on all Slots. Everything overlaps in one cell (the **chamber**).
 - Inactive Slots get the `inert` attribute: no focus, no clicks, no screen reader. CSS handles `visibility: hidden` and `opacity: 0` via the `[inert]` selector.
+- **Focus handoff**: when a Slot deactivates while it holds focus, the incoming active Slot automatically reclaims focus on its wrapper. No focus stranded on `document.body`. Keyboard users get seamless transitions.
+- Active Slots set `tabIndex={-1}` (programmatically focusable, excluded from Tab order).
 - Each Slot uses `display: flex; flex-direction: column` so content stretches to fill the reserved width.
 - Zero JS measurement. Pure CSS. Works on the first frame.
 
@@ -461,7 +476,7 @@ The `inert` attribute shipped before `1lh` in every browser. No polyfills. No fa
 
 - **Scroll anchoring**: maintain scroll position when content above a target changes.
 - **Media reservation**: reserve space for images/video via `aspect-ratio` before load.
-- **Focus stability**: trap focus to nearest surviving ancestor when DOM mutations remove the focused element.
+- ~~**Focus stability**~~: shipped in v1.2.0. Bellows automatically hands focus to the incoming Slot when the focused Slot deactivates.
 
 These are proposals, not commitments. If any would unblock your project, open an issue.
 
@@ -481,6 +496,28 @@ import type { RowProxy, ColumnSchema } from "concertina/core";
 ```
 
 It runs all data work inside a dedicated Web Worker. The main thread receives only the rows currently visible on screen, as a single transferred `ArrayBuffer`. No data is ever copied; no JSON is ever parsed on the main thread.
+
+### Type-safe RowProxy
+
+`RowProxy.get()` is fully generic. Define your schema with `as const` and every `get()` call infers the exact return type — autocomplete on column names, no manual casts:
+
+```ts
+const schema = [
+  { name: "id",    type: "utf8", maxContentChars: 10 },
+  { name: "count", type: "u32",  maxContentChars: 5 },
+  { name: "tags",  type: "list_utf8", maxContentChars: 30 },
+] as const satisfies readonly ColumnSchema[];
+
+// In your renderRow callback, type the row parameter:
+const renderRow = (row: RowProxy<typeof schema>, rowIndex: RowIndex) => {
+  const id    = row.get("id");    // string | null
+  const count = row.get("count"); // number | null
+  const tags  = row.get("tags");  // string[] | null
+  const bad   = row.get("typo");  // TS error: "typo" not in schema
+};
+```
+
+Without `as const`, `RowProxy` falls back to the full union (`string | number | boolean | string[] | null`) — existing untyped code continues to work unchanged.
 
 ### Architecture
 
@@ -591,10 +628,10 @@ For structs that require both an `id` and a `label` (e.g. `{ id: string; display
 organism_ids:   f.organisms.map(o => o.id),
 organism_names: f.organisms.map(o => o.displayName),
 
-// renderRow — O(k) zip, no JSON.parse
-const ids   = proxy.get("organism_ids")   as string[];
-const names = proxy.get("organism_names") as string[];
-const orgs  = ids.map((id, i) => ({ id, displayName: names[i] ?? "" }));
+// renderRow — O(k) zip, no JSON.parse, no casts needed with typed schema
+const ids   = proxy.get("organism_ids");   // string[] | null
+const names = proxy.get("organism_names"); // string[] | null
+const orgs  = (ids ?? []).map((id, i) => ({ id, displayName: names?.[i] ?? "" }));
 ```
 
 The DataWorker enforces that parallel columns maintain identical row counts after every batch commit. A count mismatch emits `INGEST_ERROR` and the pump is still ACK'd (so it does not stall), but the store transitions to the error state.

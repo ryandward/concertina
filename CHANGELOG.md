@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.3.0
+
+**Generic RowProxy: end-to-end type safety for `get()`.**
+
+- `RowProxy<S>` accepts a const-narrowed schema tuple. `get("col")`
+  infers the exact return type per column and restricts keys to known
+  column names. No manual casts.
+- `ColumnTypeMap` maps each `ColumnDataType` to its TypeScript
+  equivalent (`utf8` → `string`, `bool` → `boolean`, etc.).
+- `VirtualChamberProps<S>` and `VirtualChamber<S>` thread the generic
+  to `renderRow`, giving typed proxies in the callback.
+- Backward compatible: unparameterized `RowProxy` returns the full
+  union (`string | number | boolean | string[] | null`).
+
+```ts
+const schema = [
+  { name: "id", type: "utf8", maxContentChars: 10 },
+] as const satisfies readonly ColumnSchema[];
+
+row.get("id")   // string | null
+row.get("typo") // TS error
+```
+
+## 1.2.0
+
+**Focus handoff on inert swap.**
+
+- Bellows tracks focus via native `focusin`/`focusout` listeners.
+  Provides `FocusHandoffContext` to child Slots.
+- When a Slot deactivates while the container holds focus, the incoming
+  active Slot reclaims focus on its wrapper via `useLayoutEffect`.
+- Active Slots set `tabIndex={-1}` (programmatically focusable, excluded
+  from Tab order). User-provided `tabIndex` overrides via props spread.
+- No DOM reads during render. No sibling queries from Slot. All
+  orchestration flows through context from Bellows.
+
 ## 0.13.1
 
 **Hum per-instance overhead reduction.**
