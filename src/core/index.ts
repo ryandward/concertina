@@ -14,6 +14,10 @@ export { AtomicStore, useAtomicSlice } from "./atomic-store";
 export { VirtualChamber } from "./virtual-chamber";
 export type { VirtualChamberProps, RowProxy } from "./virtual-chamber";
 
+// ── Array ingestion ─────────────────────────────────────────────────────────
+export { useArrayIngest } from "./use-array-ingest";
+export type { UseArrayIngestOptions } from "./use-array-ingest";
+
 // ── Wire format utilities ─────────────────────────────────────────────────────
 export { encodeRecordBatch, createRecordBatchStream } from "./encode-record-batch";
 export type { RowRecord } from "./encode-record-batch";

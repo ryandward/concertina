@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.4.0
+
+**`useArrayIngest` — bridge plain arrays into the Core Stability Engine.**
+
+- New hook: `useArrayIngest(orchestrator, schema, data, options?)`.
+  Accepts a `T[]` from React Query / SWR / Apollo and handles chunking,
+  encoding, and lifecycle automatically.
+- Pull-based `ReadableStream`: encodes one chunk per `pull()` call.
+  O(chunkSize) memory per batch, natural async yielding via INGEST_ACK
+  round-trip, zero `setTimeout` overhead.
+- Effect cleanup aborts the previous stream on data change or unmount.
+- `chunkSize` option (default 1000) controls rows per encoded batch.
+- Exported from `concertina/core`.
+
+```ts
+const { data } = useQuery({ queryKey: ["rows"], queryFn: fetchRows });
+const orchestrator = useStabilityOrchestrator({ schema });
+useArrayIngest(orchestrator, schema, data);
+```
+
 ## 1.3.0
 
 **Generic RowProxy: end-to-end type safety for `get()`.**
