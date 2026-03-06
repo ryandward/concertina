@@ -24,6 +24,7 @@ jobs:
           cache: npm
           cache-dependency-path: demo/package-lock.json
       - run: npm ci
+      - run: npm ci
         working-directory: demo
       - run: npx vite build
         working-directory: demo
