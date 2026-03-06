@@ -12,7 +12,7 @@
   <a href="https://github.com/ryandward/concertina/actions/workflows/ci.yml"><img src="https://github.com/ryandward/concertina/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
 </p>
 
-<p align="center"><b>146 tests</b> &middot; ~1400 lines of source &middot; 1 dependency</p>
+<p align="center"><b>155 tests</b> &middot; ~1400 lines of source &middot; 1 dependency</p>
 
 ## The problem
 
@@ -457,6 +457,7 @@ Scrolls an element to the top of its nearest scrollable ancestor. Only touches `
 | Accordion/table shimmer rows | Stub data + WarmupLine (wrapper-once pattern) |
 | Panel mounts/unmounts conditionally | Glide |
 | Accordion with scroll pinning | Accordion.Root + Item + Content |
+| Large dataset from React Query / SWR | `useArrayIngest` + `VirtualChamber` |
 
 ---
 
@@ -484,18 +485,65 @@ These are proposals, not commitments. If any would unblock your project, open an
 
 ## Core Stability Engine (`concertina/core`)
 
-The Core Stability Engine is a high-performance sub-package for virtualizing large datasets. Import from the sub-path:
+The Core Stability Engine is a high-performance sub-package for virtualizing large datasets. It runs all data work inside a dedicated Web Worker. The main thread receives only the rows currently visible on screen, as a single transferred `ArrayBuffer`. No data is ever copied; no JSON is ever parsed on the main thread.
 
 ```tsx
 import {
   useStabilityOrchestrator,
+  useArrayIngest,
   VirtualChamber,
-  createRecordBatchStream,
 } from "concertina/core";
 import type { RowProxy, ColumnSchema } from "concertina/core";
 ```
 
-It runs all data work inside a dedicated Web Worker. The main thread receives only the rows currently visible on screen, as a single transferred `ArrayBuffer`. No data is ever copied; no JSON is ever parsed on the main thread.
+### Ingestion — just pass your array
+
+`useArrayIngest` bridges the gap between your data-fetching library and the engine's binary pipeline. Pass a plain `T[]` and the hook handles everything else: chunking, binary encoding, worker dispatch, backpressure, and cleanup.
+
+```tsx
+import { useStabilityOrchestrator, useArrayIngest, VirtualChamber } from "concertina/core";
+import type { ColumnSchema, RowProxy, RowIndex } from "concertina/core";
+import { useQuery } from "@tanstack/react-query";
+
+const schema = [
+  { name: "gene",  type: "utf8", maxContentChars: 12 },
+  { name: "score", type: "f64",  maxContentChars: 8 },
+  { name: "tags",  type: "list_utf8", maxContentChars: 30 },
+] as const satisfies readonly ColumnSchema[];
+
+function GeneTable() {
+  const { data } = useQuery({ queryKey: ["genes"], queryFn: fetchGenes });
+  const orchestrator = useStabilityOrchestrator({ schema: [...schema] });
+
+  // That's it. Chunking, encoding, worker dispatch — all transparent.
+  useArrayIngest(orchestrator, schema, data);
+
+  return (
+    <VirtualChamber<typeof schema>
+      store={orchestrator.store}
+      containerRef={orchestrator.containerRef}
+      renderRow={(row: RowProxy<typeof schema>, i: RowIndex) => (
+        <div key={i}>
+          {row.get("gene")}  {/* string | null — autocomplete, no cast */}
+          {row.get("score")} {/* number | null */}
+        </div>
+      )}
+    />
+  );
+}
+```
+
+**What happens under the hood:**
+
+1. `useArrayIngest` creates a pull-based `ReadableStream` from your array.
+2. Each `pull()` encodes one chunk (default 1 000 rows) into the binary wire format.
+3. The orchestrator's pump sends one chunk to the worker and awaits `INGEST_ACK` before pulling the next — O(1) IPC queue depth regardless of dataset size.
+4. The `INGEST_ACK` round-trip (`postMessage` → worker commit → `onmessage`) is inherently async, so the main thread yields between every chunk. No `setTimeout` hacks.
+5. When `data` changes (new reference), the effect cleanup aborts the previous stream and starts fresh. When `data` is `null`/`undefined`, no ingestion runs — compatible with loading states.
+
+Any data source works. React Query, SWR, Apollo, `useSuspenseQuery`, a plain `fetch` + `useState` — if it gives you a `T[]`, `useArrayIngest` takes it from there.
+
+For streaming or custom binary sources, `createRecordBatchStream` and `encodeRecordBatch` are still exported for direct use.
 
 ### Type-safe RowProxy
 
