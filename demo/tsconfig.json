@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "concertina": ["../src/index.ts"],
+      "concertina/core": ["../src/core/index.ts"],
+      "concertina/accordion": ["../src/accordion/index.ts"]
+    }
+  },
+  "include": ["src"]
+}

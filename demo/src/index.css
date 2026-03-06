@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Background & Foreground ── */
+  --color-background: #ffffff;
+  --color-foreground: #09090b;
+
+  /* ── Muted ── */
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+
+  /* ── Card ── */
+  --color-card: #ffffff;
+  --color-card-foreground: #09090b;
+
+  /* ── Border ── */
+  --color-border: #e2e8f0;
+
+  /* ── Brand (indigo-600 range) ── */
+  --color-brand: #4f46e5;
+  --color-brand-hover: #4338ca;
+  --color-brand-foreground: #ffffff;
+
+  /* ── Focus ring ── */
+  --color-ring: #6366f1;
+
+  /* ── Status ── */
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-destructive: #dc2626;
+
+  /* ── Hero gradient hints ── */
+  --color-hero-from: #eef2ff;
+  --color-hero-to: #e0e7ff;
+}
+
+body {
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
