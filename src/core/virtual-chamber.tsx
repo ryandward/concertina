@@ -25,6 +25,8 @@ import {
   TAG_TO_TYPE,
   asRowIndex,
   asPoolSlot,
+  type ColumnSchema,
+  type ColumnTypeMap,
   type ResolvedColumn,
   type DataWindow,
   type ViewportLayout,
@@ -134,22 +136,43 @@ function buildAccessors(
 
 // ─── RowProxy ─────────────────────────────────────────────────────────────────
 
-export interface RowProxy {
-  /**
-   * Schema-aware accessor.
-   * - utf8 columns     → string
-   * - list_utf8 columns → string[]  (pre-parsed, no JSON.parse on main thread)
-   * - numeric columns  → number | boolean
-   * - unknown column   → null
-   */
-  get(column: string): string | number | boolean | string[] | null;
+/**
+ * Schema-typed row accessor.
+ *
+ * When `S` is a const-narrowed schema tuple, `get()` infers the exact return
+ * type per column and restricts the key to known column names:
+ *
+ * ```ts
+ * const schema = [
+ *   { name: "id", type: "utf8", maxContentChars: 10 },
+ *   { name: "count", type: "u32", maxContentChars: 5 },
+ * ] as const satisfies readonly ColumnSchema[];
+ *
+ * // Inside renderRow:
+ * row.get("id")    // string | null
+ * row.get("count") // number | null
+ * row.get("typo")  // TS error
+ * ```
+ *
+ * Without a const schema (`S = readonly ColumnSchema[]`), `get()` accepts any
+ * string and returns the full union — backward compatible with pre-1.3 usage.
+ */
+export interface RowProxy<S extends readonly ColumnSchema[] = readonly ColumnSchema[]> {
+  get<K extends S[number]["name"]>(
+    column: K,
+  ): ColumnTypeMap[Extract<S[number], { readonly name: K }>["type"]] | null;
 }
+
+/** Internal untyped return — the generic boundary is at VirtualChamber. */
+type UntypedRowProxy = {
+  get(column: string): string | number | boolean | string[] | null;
+};
 
 function buildRowProxy(
   accessors: ColumnAccessor[],
   schema:    ResolvedColumn[],
   localRow:  number,
-): RowProxy {
+): UntypedRowProxy {
   return {
     get(column: string): string | number | boolean | string[] | null {
       const idx = schema.findIndex(c => c.name === column);
@@ -217,13 +240,15 @@ function buildPoolAssignments(
 
 const OVERSCAN_ROWS = 3;
 
-export interface VirtualChamberProps {
+export interface VirtualChamberProps<S extends readonly ColumnSchema[] = readonly ColumnSchema[]> {
   store: AtomicStore;
   /**
    * Render function called once per visible row.
    * Receives a RowProxy for schema-safe column access and the absolute row index.
+   *
+   * When `S` is a const-narrowed schema tuple, `row.get()` is fully typed.
    */
-  renderRow: (row: RowProxy, rowIndex: RowIndex) => ReactNode;
+  renderRow: (row: RowProxy<S>, rowIndex: RowIndex) => ReactNode;
   /**
    * Callback ref for the scroll container element.
    * Pass the `containerRef` returned by useStabilityOrchestrator directly.
@@ -234,8 +259,8 @@ export interface VirtualChamberProps {
   style?: CSSProperties;
 }
 
-export function VirtualChamber(
-  { store, renderRow, containerRef, className, style }: VirtualChamberProps,
+export function VirtualChamber<S extends readonly ColumnSchema[] = readonly ColumnSchema[]>(
+  { store, renderRow, containerRef, className, style }: VirtualChamberProps<S>,
 ) {
   const layout = useAtomicSlice(store, s => s.layout);
   const win    = useAtomicSlice(store, s => s.window);
@@ -302,7 +327,7 @@ export function VirtualChamber(
             }}
           >
             {renderRow(
-              buildRowProxy(accessors, layout.columns, localIndex),
+              buildRowProxy(accessors, layout.columns, localIndex) as RowProxy<S>,
               rowIndex,
             )}
           </div>

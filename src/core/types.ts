@@ -28,6 +28,17 @@ export type ColumnDataType =
   | "utf8"
   | "list_utf8";
 
+/** Maps each `ColumnDataType` to the TypeScript type returned by `RowProxy.get()`. */
+export type ColumnTypeMap = {
+  f64: number;
+  i32: number;
+  u32: number;
+  bool: boolean;
+  timestamp_ms: number;
+  utf8: string;
+  list_utf8: string[];
+};
+
 export interface ColumnSchema {
   readonly name: string;
   readonly type: ColumnDataType;

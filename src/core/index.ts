@@ -23,6 +23,7 @@ export type {
   // Schema
   ColumnSchema,
   ColumnDataType,
+  ColumnTypeMap,
   ResolvedColumn,
   // Layout
   ViewportLayout,
