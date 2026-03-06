@@ -151,12 +151,13 @@ function StableProfile({ customer }: { customer: Customer }) {
         <div className="flex gap-5">
           <Frame
             aspectRatio={1}
-            className="size-24 rounded-full overflow-hidden flex-shrink-0"
+            className="w-24 rounded-full overflow-hidden flex-shrink-0"
+            style={{ width: "6rem" }}
           >
             <img
               src={customer.avatar}
               alt={customer.name}
-              className="size-full object-cover rounded-full"
+              className="w-full h-full object-cover"
             />
           </Frame>
           <div className="min-w-0">
