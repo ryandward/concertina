@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.5.0
+
+**Infrastructure hardening. Frame component for media stability.**
+
+Infrastructure:
+- `"use client"` directive added to `src/index.ts`, `src/accordion.ts`,
+  and `src/core/index.ts`. Concertina now works in Next.js RSC-by-default
+  projects without manual client boundary annotations.
+- CSP nonce support: `injectStyles()` reads nonce from
+  `<meta name="concertina-nonce" content="...">` and sets it on the
+  injected `<style>` tag. Strict CSP headers no longer block auto-injection.
+- Injection opt-out: `<meta name="concertina-disable-injection">` in
+  `<head>` prevents auto-injection entirely. Use with SSR when you
+  serve `concertina/styles.css` statically.
+
+New component:
+- `Frame`: loading-aware wrapper for images and video. Reserves space
+  via `aspect-ratio` so the bounding box is stable before media loads.
+  Shows a shimmer placeholder while loading, reveals children when done.
+  Reads from `<Vamp>` context like `<Hum>`. Zero CLS for media.
+
+```tsx
+<Frame aspectRatio={16/9} loading={!loaded}>
+  <img src={src} alt={alt} onLoad={() => setLoaded(true)} />
+</Frame>
+```
+
 ## 1.4.0
 
 **`useArrayIngest` — bridge plain arrays into the Core Stability Engine.**

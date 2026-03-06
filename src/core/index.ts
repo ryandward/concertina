@@ -1,3 +1,5 @@
+"use client";
+
 // Core Stability Engine — public surface (v1.0.0)
 
 // ── Orchestration ─────────────────────────────────────────────────────────────

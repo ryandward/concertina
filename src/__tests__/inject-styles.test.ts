@@ -52,6 +52,36 @@ describe("injectStyles", () => {
     expect(text).toContain(".concertina-gigbag");
   });
 
+  it("sets nonce from meta[name='concertina-nonce']", async () => {
+    const meta = document.createElement("meta");
+    meta.setAttribute("name", "concertina-nonce");
+    meta.setAttribute("content", "abc123");
+    document.head.appendChild(meta);
+
+    const { injectStyles } = await import("../internal/inject-styles");
+    injectStyles();
+    const style = document.querySelector("style[data-concertina]");
+    expect(style?.getAttribute("nonce")).toBe("abc123");
+  });
+
+  it("injects without nonce when meta is absent", async () => {
+    const { injectStyles } = await import("../internal/inject-styles");
+    injectStyles();
+    const style = document.querySelector("style[data-concertina]");
+    expect(style?.getAttribute("nonce")).toBeNull();
+  });
+
+  it("skips injection when disable meta is present", async () => {
+    const meta = document.createElement("meta");
+    meta.setAttribute("name", "concertina-disable-injection");
+    document.head.appendChild(meta);
+
+    const { injectStyles } = await import("../internal/inject-styles");
+    injectStyles();
+    const style = document.querySelector("style[data-concertina]");
+    expect(style).toBeNull();
+  });
+
   it("is a no-op when document is undefined (SSR)", async () => {
     const originalDoc = globalThis.document;
     // @ts-expect-error simulate SSR

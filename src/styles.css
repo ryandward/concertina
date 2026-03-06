@@ -127,6 +127,32 @@
 }
 
 
+/* Frame — loading-aware media container.
+   Reserves space via aspect-ratio (set inline by the component).
+   Children (img/video) fill the box via object-fit. */
+.concertina-frame {
+  overflow: hidden;
+  width: 100%;
+}
+.concertina-frame > img,
+.concertina-frame > video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.concertina-frame-loading {
+  border-radius: var(--concertina-warmup-line-radius, 0.125rem);
+  background: linear-gradient(
+    90deg,
+    var(--concertina-warmup-line-color, #e5e7eb) 25%,
+    var(--concertina-warmup-line-highlight, #f3f4f6) 50%,
+    var(--concertina-warmup-line-color, #e5e7eb) 75%
+  );
+  background-size: 200% 100%;
+  animation: concertina-shimmer 1.5s ease-in-out infinite;
+}
+
 /* Glide — enter/exit animation wrapper. */
 .concertina-glide {
   --concertina-glide-duration: 200ms;
@@ -169,6 +195,7 @@
   .concertina-glide-entering,
   .concertina-glide-exiting,
   .concertina-warmup-line,
+  .concertina-frame-loading,
   .concertina-warmup-exiting .concertina-warmup-line {
     animation-duration: 0s !important;
   }

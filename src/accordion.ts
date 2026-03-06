@@ -1,3 +1,5 @@
+"use client";
+
 // concertina/accordion — Radix Accordion integration with scroll pinning
 //
 // Sub-path export so accordion wrappers live in their own namespace:

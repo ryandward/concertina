@@ -12,7 +12,7 @@
   <a href="https://github.com/ryandward/concertina/actions/workflows/ci.yml"><img src="https://github.com/ryandward/concertina/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
 </p>
 
-<p align="center"><b>155 tests</b> &middot; ~1400 lines of source &middot; 1 dependency</p>
+<p align="center"><b>169 tests</b> &middot; ~1500 lines of source &middot; 1 dependency</p>
 
 ## The problem
 
@@ -26,14 +26,14 @@ It's not a state problem. It's a **structure problem.** The box changed size bec
 
 Don't swap structures. Swap what's inside them.
 
-Concertina gives you four high-level components: **Bellows**, **Hum**, **Overture**, and **Ensemble**. They handle the math so you can focus on the music. CSS is auto-injected on first render. No manual imports needed.
+Concertina gives you five high-level components: **Bellows**, **Hum**, **Frame**, **Overture**, and **Ensemble**. They handle the math so you can focus on the music. CSS is auto-injected on first render. No manual imports needed.
 
 ```bash
 npm install concertina
 ```
 
 ```tsx
-import { Bellows, Slot, Hum, Ensemble } from "concertina";
+import { Bellows, Slot, Hum, Frame, Ensemble } from "concertina";
 // That's it. No CSS import required.
 ```
 
@@ -303,13 +303,49 @@ The Gigbag ratchet remembers the largest-ever height. When shimmer rows fade out
 
 ---
 
+## Frame: temporal stability for media
+
+An image loads from a CDN. The container has no height until the image arrives. Everything below it jumps. Images are the #1 cause of CLS.
+
+Frame reserves space via CSS `aspect-ratio` and shows a shimmer placeholder until the media loads. The bounding box is identical in both states — zero shift.
+
+```tsx
+import { Frame } from "concertina";
+
+function Avatar({ src, alt }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <Frame aspectRatio={1} loading={!loaded} className="rounded-full w-12">
+      <img src={src} alt={alt} onLoad={() => setLoaded(true)} />
+    </Frame>
+  );
+}
+```
+
+Frame reads from `<Vamp>` context automatically — no `loading` prop needed when a Vamp ancestor exists. Explicit `loading` always overrides context.
+
+Images and videos inside a Frame get `width: 100%; height: 100%; object-fit: cover` via CSS, filling the aspect-ratio box without distortion.
+
+#### Frame props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `aspectRatio` | `number` | | CSS aspect-ratio value (e.g. `16/9`, `1`, `4/3`) |
+| `loading` | `boolean` | Vamp context | Show shimmer (true) or children (false) |
+| `as` | `ElementType` | `"div"` | HTML element to render |
+| `className` | `string` | | Applied to both shimmer and content states |
+
+---
+
 ## The stability contract
 
-Nothing moves unless you want it to. Three strategies enforce this:
+Nothing moves unless you want it to. Four strategies enforce this:
 
 **Inert Ghost** (Hum): children render inside the shimmer but are marked `inert`. The ghost provides intrinsic width. CSS hides it via `.concertina-warmup-line > [inert] { visibility: hidden }`. The shimmer is exactly as wide as the content it replaces.
 
 **Chamber** (Bellows): all Slots occupy the same CSS grid cell (`grid-area: 1/1`). The grid auto-sizes to the largest child. Inactive Slots are hidden via `[inert]` but remain in the layout flow, contributing their dimensions. The cell never shrinks.
+
+**Aspect-Ratio Lock** (Frame): the container's dimensions are defined by `aspect-ratio` before any content loads. A shimmer fills the box during loading. When the image/video arrives, it fills the same box via `object-fit: cover`. The bounding box never changes.
 
 **Ratchet** (Gigbag / Ensemble): a ResizeObserver tracks the maximum-ever size and applies it as `min-height` / `min-width`. The container can grow but never shrinks. Swap a spinner for a table; the container stays at the table's height.
 
@@ -320,6 +356,20 @@ Nothing moves unless you want it to. Three strategies enforce this:
 CSS is auto-injected via `useInsertionEffect` on first render. A `<style data-concertina>` tag is added to `<head>` once, idempotently. No build plugin, no import statement, no configuration.
 
 The injection is SSR-safe: it checks `typeof document` and no-ops on the server. For SSR/SSG, keep `import "concertina/styles.css"` in your entry point so styles exist before hydration.
+
+**CSP nonce**: if your app uses a strict Content-Security-Policy, add a `<meta>` tag with the nonce before any concertina component mounts:
+
+```html
+<meta name="concertina-nonce" content="<%= nonce %>" />
+```
+
+The injected `<style>` tag will carry the nonce attribute, satisfying the CSP check.
+
+**Opt-out**: to disable auto-injection entirely (e.g. you serve `concertina/styles.css` from a CDN), add:
+
+```html
+<meta name="concertina-disable-injection" />
+```
 
 ---
 
@@ -455,6 +505,7 @@ Scrolls an element to the top of its nearest scrollable ancestor. Only touches `
 | List loading from API | Ensemble |
 | Spinner replaced by loaded content | Gigbag + Warmup |
 | Accordion/table shimmer rows | Stub data + WarmupLine (wrapper-once pattern) |
+| Image/video loading causes layout shift | Frame |
 | Panel mounts/unmounts conditionally | Glide |
 | Accordion with scroll pinning | Accordion.Root + Item + Content |
 | Large dataset from React Query / SWR | `useArrayIngest` + `VirtualChamber` |
@@ -476,7 +527,7 @@ The `inert` attribute shipped before `1lh` in every browser. No polyfills. No fa
 ## Roadmap
 
 - **Scroll anchoring**: maintain scroll position when content above a target changes.
-- **Media reservation**: reserve space for images/video via `aspect-ratio` before load.
+- ~~**Media reservation**~~: shipped in v1.5.0. `<Frame>` reserves space via `aspect-ratio` with a shimmer placeholder until media loads.
 - ~~**Focus stability**~~: shipped in v1.2.0. Bellows automatically hands focus to the incoming Slot when the focused Slot deactivates.
 
 These are proposals, not commitments. If any would unblock your project, open an issue.

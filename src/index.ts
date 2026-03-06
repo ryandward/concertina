@@ -1,3 +1,5 @@
+"use client";
+
 // Accordion — Radix integration (v0.4.0+)
 export { Root } from "./accordion/root";
 export { Item } from "./accordion/item";
@@ -19,6 +21,8 @@ export { Vamp, VampContext, useVamp } from "./components/vamp";
 export type { VampProps } from "./components/vamp";
 export { Overture } from "./components/overture";
 export type { OvertureProps } from "./components/overture";
+export { Frame } from "./components/frame";
+export type { FrameProps } from "./components/frame";
 export { Ensemble, Ensemble as StableCollection } from "./components/ensemble";
 export type { EnsembleProps, EnsembleProps as StableCollectionProps } from "./components/ensemble";
 
