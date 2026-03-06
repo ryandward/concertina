@@ -6,7 +6,7 @@ export function App() {
     <div className="min-h-screen bg-background">
       <Hero />
       <CustomerFeed />
-      <footer className="border-t border-border py-12 text-center text-sm text-muted-foreground">
+      <footer className="border-t border-border bg-muted/50 py-12 text-center text-sm text-muted-foreground">
         Built with{" "}
         <a
           href="https://github.com/ryandward/concertina"

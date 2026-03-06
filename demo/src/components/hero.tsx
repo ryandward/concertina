@@ -3,16 +3,16 @@ import { ModeToggle } from "@/components/mode-toggle";
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden py-24 lg:py-32">
+    <section className="relative overflow-hidden py-28 lg:py-40">
       {/* Radial gradient background */}
       <div
-        className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,var(--color-hero-from)_0%,transparent_70%)]"
+        className="absolute inset-0 -z-20 bg-[radial-gradient(ellipse_at_center,var(--color-hero-from)_0%,transparent_70%)]"
         aria-hidden="true"
       />
 
       {/* Dot grid pattern */}
       <div
-        className="absolute inset-0 -z-10 opacity-50"
+        className="absolute inset-0 -z-10 opacity-40"
         style={{
           backgroundImage:
             "radial-gradient(circle, #e2e8f0 1px, transparent 1px)",

@@ -42,22 +42,22 @@ export function CustomerCard({
             {customer.title} at {customer.company}
           </p>
         </div>
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-4 shrink-0 flex-wrap justify-end">
           <span
             className={cn(
-              "text-[11px] font-medium uppercase tracking-wider rounded-full px-2.5 py-0.5",
+              "text-[11px] font-medium uppercase tracking-wider rounded-full px-2.5 py-0.5 hidden sm:inline-flex",
               statusColors[customer.status],
             )}
           >
             {customer.status}
           </span>
-          <span className="text-sm font-medium tabular-nums text-card-foreground">
+          <span className="text-sm font-medium tabular-nums text-card-foreground hidden sm:inline">
             ${customer.mrr.toLocaleString()}
           </span>
           <button
             type="button"
             onClick={onToggleExpand}
-            className="text-sm font-medium text-brand hover:text-brand-hover transition-colors"
+            className="text-sm font-medium text-brand hover:text-brand-hover transition-colors rounded-md px-3 py-1.5 hover:bg-indigo-50 active:bg-indigo-100"
           >
             {expanded ? "Close" : "View Details"}
           </button>

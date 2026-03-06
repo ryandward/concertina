@@ -25,7 +25,7 @@ export function CustomerFeed() {
     <section className="py-16 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pb-4 border-b border-border">
           <h2 className="text-2xl font-semibold tracking-tight">
             Customer Directory
           </h2>
@@ -37,10 +37,10 @@ export function CustomerFeed() {
         {/* Card list */}
         {enabled ? (
           <Gigbag axis="height">
-            <div className="space-y-3 mt-8">{cardList}</div>
+            <div className="space-y-3 mt-10">{cardList}</div>
           </Gigbag>
         ) : (
-          <div className="space-y-3 mt-8">{cardList}</div>
+          <div className="space-y-3 mt-10">{cardList}</div>
         )}
       </div>
     </section>

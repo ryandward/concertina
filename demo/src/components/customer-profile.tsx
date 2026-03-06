@@ -70,7 +70,9 @@ function NaiveProfile({ customer }: { customer: Customer }) {
     <div className="p-5 pt-4">
       {/* Top section */}
       <div className="flex gap-5">
-        {/* Avatar — no width/height, no container sizing. Pops in and pushes text. */}
+        {/* Avatar — INTENTIONALLY no width/height, no container sizing, no flex-shrink.
+           The image pops in at its natural resolution and violently shoves content around.
+           This is the "naive" behavior we're contrasting against concertina's stability. */}
         {avatarSrc && (
           <img
             src={avatarSrc}
