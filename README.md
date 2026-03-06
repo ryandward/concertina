@@ -596,6 +596,10 @@ Any data source works. React Query, SWR, Apollo, `useSuspenseQuery`, a plain `fe
 
 For streaming or custom binary sources, `createRecordBatchStream` and `encodeRecordBatch` are still exported for direct use.
 
+#### Concertina vs. Strand
+
+Concertina's Core Engine is designed for maximum ergonomics and drop-in compatibility with standard React apps. If you are building a highly specialized application (genomics, heavy data-viz) and are willing to configure strict cross-origin isolation headers (`COOP`/`COEP`) for true zero-copy `SharedArrayBuffer` streaming, check out [Strand](https://github.com/ryandward/strand). Full architecture comparison: [strand-vs-concertina.md](https://github.com/ryandward/strand/blob/main/docs/strand-vs-concertina.md).
+
 ### Type-safe RowProxy
 
 `RowProxy.get()` is fully generic. Define your schema with `as const` and every `get()` call infers the exact return type — autocomplete on column names, no manual casts:
