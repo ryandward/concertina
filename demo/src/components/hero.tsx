@@ -30,8 +30,8 @@ export function Hero() {
 
         {/* Headline */}
         <h1 className="mt-6 text-5xl font-semibold leading-[1.1] tracking-tight text-balance sm:text-6xl">
-          Layout shift isn&rsquo;t a state problem. It&rsquo;s a structural
-          problem.
+          Layout shift isn&rsquo;t a state problem.{" "}
+          It&rsquo;s a structural problem.
         </h1>
 
         {/* Subheadline */}

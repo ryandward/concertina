@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { Glide } from "concertina";
 import { useConcertinaMode } from "@/context/concertina-mode";
 import { cn } from "@/lib/utils";
@@ -32,7 +33,8 @@ export function CustomerCard({
           alt={customer.name}
           width={48}
           height={48}
-          className="size-12 rounded-full bg-muted flex-shrink-0"
+          onClick={onToggleExpand}
+          className="size-12 rounded-full bg-muted flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-brand/30 transition-shadow"
         />
         <div className="flex-1 min-w-0">
           <p className="font-medium text-card-foreground truncate">
@@ -57,9 +59,15 @@ export function CustomerCard({
           <button
             type="button"
             onClick={onToggleExpand}
-            className="text-sm font-medium text-brand hover:text-brand-hover transition-colors rounded-md px-3 py-1.5 hover:bg-indigo-50 active:bg-indigo-100"
+            className="rounded-full p-1.5 text-muted-foreground hover:text-card-foreground hover:bg-muted transition-colors"
+            aria-label={expanded ? "Collapse" : "Expand"}
           >
-            {expanded ? "Close" : "View Details"}
+            <ChevronDown
+              className={cn(
+                "size-5 transition-transform duration-200",
+                expanded && "rotate-180",
+              )}
+            />
           </button>
         </div>
       </div>
